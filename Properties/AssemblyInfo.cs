@@ -1,4 +1,12 @@
-﻿using System.Resources;
+﻿/*
+<copyright>
+  Copyright (c) 2012 Codefarts
+  All rights reserved.
+  contact@codefarts.com
+  http://www.codefarts.com
+</copyright>
+*/
+using System.Resources;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
