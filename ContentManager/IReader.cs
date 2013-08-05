@@ -6,15 +6,23 @@
   http://www.codefarts.com
 </copyright>
 */
-namespace CBX.ContentManager
+namespace Codefarts.ContentManager
 {
     using System;
     
     /// <summary>
     /// Provides a interface for content readers.
     /// </summary>
+    /// <typeparam name="T">
+    /// The type use as the indexer key.
+    /// </typeparam>
     public interface IReader<T>
     {
+        /// <summary>
+        /// Gets the <see cref="Type"/> that this reader implementation returns.
+        /// </summary>
+        Type Type { get; }
+
         /// <summary>
         /// Reads a file and returns a type representing the data.
         /// </summary>
@@ -29,12 +37,6 @@ namespace CBX.ContentManager
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        /// <returns>Returns a type representing the data.</returns>
         void ReadAsync(T key, ContentManager<T> content, Action<object> completedCallback);
-        
-        /// <summary>
-        /// Gets the <see cref="Type"/> that this reader implementation returns.
-        /// </summary>
-        Type Type { get; }
     }
 }
