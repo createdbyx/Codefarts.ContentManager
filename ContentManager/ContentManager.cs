@@ -11,6 +11,12 @@ namespace Codefarts.ContentManager
     using System;
     using System.Collections.Generic;
 
+#if !UNITY
+    using Codefarts.ContentManager.Properties;
+#else
+    using Codefarts.Localization;
+#endif
+
     /// <summary>
     /// Provides a content manager for loading and caching assets.
     /// </summary>
@@ -23,9 +29,24 @@ namespace Codefarts.ContentManager
         protected readonly Dictionary<Type, IReader<TKey>> Readers;
 
         /// <summary>
-        /// Holds a singleton instance of a <see cref="ContentManager"/> type.
+        /// Holds a singleton instance of a <see cref="ContentManager{TKey}"/> type.
         /// </summary>
         private static ContentManager<TKey> singleton;
+
+        /// <summary>
+        /// Holds the dictionary for the <see cref="Assets"/> property.
+        /// </summary>
+        private Dictionary<TKey, object> assets;
+
+        /// <summary>
+        /// Holds the loading queue value for the <see cref="LoadingQueue"/> property.
+        /// </summary>
+        private int loadingQueue;
+
+        /// <summary>
+        /// Holds the value for the <see cref="RootDirectory"/> property.    
+        /// </summary>
+        private string rootDirectory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ContentManager{TKey}"/> class. 
@@ -35,8 +56,8 @@ namespace Codefarts.ContentManager
         /// </param>
         public ContentManager(string rootDirectory)
         {
-            this.Assets = new Dictionary<TKey, object>();
-            this.RootDirectory = rootDirectory;
+            this.assets = new Dictionary<TKey, object>();
+            this.rootDirectory = rootDirectory;
             this.Readers = new Dictionary<Type, IReader<TKey>>();
         }
 
@@ -49,7 +70,7 @@ namespace Codefarts.ContentManager
         }
 
         /// <summary>
-        /// Gets a singleton instance of a <see cref="ContentManager"/> type.
+        /// Gets a singleton instance of a <see cref="ContentManager{TKey}"/> type.
         /// </summary>
         public static ContentManager<TKey> Instance
         {
@@ -62,21 +83,73 @@ namespace Codefarts.ContentManager
         /// <summary>
         /// Gets or sets a reference to a dictionary for storing cached assets.
         /// </summary>
-        public virtual Dictionary<TKey, object> Assets { get; protected set; }
+        public virtual Dictionary<TKey, object> Assets
+        {
+            get
+            {
+                return this.assets;
+            }
+
+            protected set
+            {
+                this.assets = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether or not <see cref="Unload"/> method will call <see cref="IDisposable.Dispose"/> method on 
         /// cached assets that implement <see cref="IDisposable"/> interface.
         /// </summary>
-        public bool AutoDisposeOnUnload { get; set; }
+        public virtual bool AutoDisposeOnUnload { get; set; }
 
         /// <summary>
-        /// Gets or sets the root directory associated with this <see cref="ContentManager{T}"/>.
+        /// Gets the asynchronous loading queue.
         /// </summary>
-        public virtual string RootDirectory { get; set; }
+        /// <remarks>This value indicates the number of unfinished asynchronous load operations.</remarks>
+        public int LoadingQueue
+        {
+            get
+            {
+                return this.loadingQueue;
+            }
+        }
+     
+        /// <summary>
+        /// Gets or sets the root directory associated with this <see cref="ContentManager{TKey}"/>.
+        /// </summary>
+        public virtual string RootDirectory
+        {
+            get
+            {
+                return this.rootDirectory;
+            }
+
+            set
+            {
+                this.rootDirectory = value;
+            }
+        }
 
         /// <summary>
-        /// Gets a <see cref="IEnumerable{T}"/> of type <see cref="IReader{T}"/> types that have been registered with the <see cref="ContentManager{T}"/>.
+        /// Gets or sets a reference to a asset in the <see cref="Assets"/> cache.
+        /// </summary>
+        /// <param name="key">The key used to access the asset.</param>
+        /// <returns>Returns a reference to a cached asset.</returns>
+        public virtual object this[TKey key]
+        {
+            get
+            {
+                return this.assets[key];
+            }
+
+            set
+            {
+                this.assets[key] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets a <see cref="IEnumerable{T}"/> of type <see cref="IReader{T}"/> types that have been registered with the <see cref="ContentManager{TKey}"/>.
         /// </summary>
         /// <returns>Returns a <see cref="IEnumerable{T}"/> of <see cref="IReader{T}"/>'s.</returns>
         public virtual IEnumerable<IReader<TKey>> GetReaders()
@@ -88,7 +161,36 @@ namespace Codefarts.ContentManager
         }
 
         /// <summary>
-        /// Loads a asset from disk if not already done so and caches it.
+        /// Asynchronously loads a asset from disk if not already done so and caches it.
+        /// </summary>
+        /// <typeparam name="TReturnValue">
+        /// The asset type that will be returned.
+        /// </typeparam>
+        /// <param name="key">
+        /// The key that points to the asset to load.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// If the <see cref="key"/> is a string type and has no value.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// If unable to find a registered <see cref="IReader{T}.Type"/> that matches the <see cref="TReturnValue"/> type.
+        /// </exception>
+        /// <exception cref="NullReferenceException">
+        /// Can occur if no reader for type <see cref="TReturnValue"/> could be found.
+        /// </exception>
+        /// <remarks>
+        /// This method will cause the asset to be cached. If the asset is already cached it will returned the cached asset.
+        /// </remarks>
+        /// <returns>
+        /// Returns a <see cref="TReturnValue"/> type containing the requested data.
+        /// </returns>
+        public virtual TReturnValue Load<TReturnValue>(TKey key)
+        {
+            return this.Load<TReturnValue>(key, true);
+        }
+
+        /// <summary>
+        /// Loads a asset from disk with the option to cache the data.
         /// </summary>
         /// <typeparam name="TReturnValue">The asset type that will be returned.</typeparam>
         /// <param name="key">The key that points to the asset to load.</param>
@@ -98,9 +200,9 @@ namespace Codefarts.ContentManager
         /// <exception cref="ArgumentException">If unable to find a registered <see cref="IReader{T}.Type"/> that matches the <see cref="TReturnValue"/> type.</exception>
         /// <exception cref="NullReferenceException">Can occur if no reader for type <see cref="TReturnValue"/> could be found.</exception>
         /// <remarks>If the asset is already cached it will returned the cached asset.</remarks>
-        public TReturnValue Load<TReturnValue>(TKey key, bool cache)
+        public virtual TReturnValue Load<TReturnValue>(TKey key, bool cache)
         {
-            // if "K" is a string type check if the string is empty and if so throw an exception
+            // if "key" is a string type check if the string is empty and if so throw an exception
             if (key is string && string.IsNullOrEmpty((key as string).Trim()))
             {
                 throw new ArgumentNullException("key");
@@ -116,7 +218,11 @@ namespace Codefarts.ContentManager
             var type = typeof(List<TReturnValue>).GetGenericArguments()[0];
             if (!this.Readers.ContainsKey(type))
             {
-                throw new ArgumentException("No reader is available for the specified type.");
+#if UNITY
+                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
+#else
+                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
+#endif
             }
 
             // get reader and read asset
@@ -126,11 +232,11 @@ namespace Codefarts.ContentManager
             // if caching then ass returned value to the cache
             if (cache)
             {
-                lock (this.Assets)
+                lock (this.assets)
                 {
-                    if (!this.Assets.ContainsKey(key))
+                    if (!this.assets.ContainsKey(key))
                     {
-                        this.Assets.Add(key, readerObject);
+                        this.assets.Add(key, readerObject);
                     }
                 }
             }
@@ -144,62 +250,98 @@ namespace Codefarts.ContentManager
         /// <typeparam name="TReturnValue">The asset type that will be returned.</typeparam>
         /// <param name="key">The key that points to the asset to load.</param>
         /// <param name="completedCallback">A reference to a callback method that will be invoked when loading completes.</param>
-        /// <param name="cache">If true the asset will be cached.</param>
         /// <exception cref="ArgumentNullException">If the <see cref="key"/> is a string type and has no value.</exception>
         /// <exception cref="ArgumentException">If unable to find a registered <see cref="IReader{T}.Type"/> that matches the <see cref="TReturnValue"/> type.</exception>
         /// <exception cref="NullReferenceException">Can occur if no reader for type <see cref="TReturnValue"/> could be found.</exception>
-        /// <remarks>If the asset is already cached it will returned the cached asset.</remarks>
-        public void Load<TReturnValue>(TKey key, Action<TReturnValue> completedCallback, bool cache)
+        /// <remarks>This method will cause the asset to be cached. If the asset is already cached it will returned the cached asset.</remarks>
+        public virtual void Load<TReturnValue>(TKey key, Action<TReturnValue> completedCallback)
         {
-            // if "K" is a string type check if the string is empty and if so throw an exception
+            this.Load(key, completedCallback, true);
+        }
+
+        /// <summary>
+        /// Asynchronously loads a asset from disk with the option to cache the data.
+        /// </summary>
+        /// <typeparam name="TReturnValue">The asset type that will be returned.</typeparam>
+        /// <param name="key">The key that points to the asset to load.</param>
+        /// <param name="completedCallback">A reference to a callback method that will be invoked when loading completes.</param>
+        /// <param name="cache">If true the asset will be cached.</param>
+        /// <exception cref="ArgumentNullException">If the <see cref="key"/> is a string type and has no value, or the <see cref="completedCallback"/> is null.</exception>
+        /// <exception cref="ArgumentException">If unable to find a registered <see cref="IReader{T}.Type"/> that matches the <see cref="TReturnValue"/> type.</exception>
+        /// <exception cref="NullReferenceException">Can occur if no reader for type <see cref="TReturnValue"/> could be found.</exception>
+        /// <remarks>If the asset is already cached it will returned the cached asset.</remarks>
+        public virtual void Load<TReturnValue>(TKey key, Action<TReturnValue> completedCallback, bool cache)
+        {
+            if (completedCallback == null)
+            {
+                throw new ArgumentNullException("completedCallback");
+            }
+
+            var callback = new Action<TReturnValue>(
+                value =>
+                {
+                    // update loading queue
+                    this.loadingQueue = Math.Max(0, this.loadingQueue - 1);
+
+                    // if a callback was specified call it now and pass in the reference to the loaded asset
+                    completedCallback(value);
+                });
+
+            // if "key" is a string type check if the string is empty and if so throw an exception
             if (key is string && string.IsNullOrEmpty((key as string).Trim()))
             {
                 throw new ArgumentNullException("key");
             }
 
             // if already cached returned the cached asset
-            if (this.Assets.ContainsKey(key) && completedCallback != null)
+            if (this.Assets.ContainsKey(key))
             {
-                completedCallback((TReturnValue)this.Assets[key]);
+                callback((TReturnValue)this.Assets[key]);
                 return;
             }
 
-            // try to find a matching reader that return the same type specified with "K"
+            // try to find a matching reader that return the same type specified with "TReturnValue"
             var type = typeof(List<TReturnValue>).GetGenericArguments()[0];
             if (!this.Readers.ContainsKey(type))
             {
-                throw new ArgumentException("No reader is available for the specified type.");
+#if UNITY
+                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
+#else
+                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
+#endif
             }
 
             // get reader and read asset
             var reader = this.Readers[type];
+
+            // update the loading queue
+            this.loadingQueue++;
+
+            // perform asynchronous read
             reader.ReadAsync(
-            key, 
-            this, 
+            key,
+            this,
             readerObject =>
+            {
+                // if caching then add returned value to the cache
+                if (cache)
                 {
-                    // if caching then add returned value to the cache
-                    if (cache)
+                    lock (this.assets)
                     {
-                        lock (this.Assets)
+                        if (!this.assets.ContainsKey(key))
                         {
-                            if (!this.Assets.ContainsKey(key))
-                            {
-                                this.Assets.Add(key, readerObject);
-                            }
+                            this.assets.Add(key, readerObject);
                         }
                     }
+                }
 
-                    // if a callback was specified call it now and pass in the reference to the loaded asset
-                    if (completedCallback != null)
-                    {
-                        completedCallback((TReturnValue)readerObject);
-                    }
-                });
+                // if a callback was specified call it now and pass in the reference to the loaded asset
+                callback((TReturnValue)readerObject);
+            });
         }
 
         /// <summary>
-        /// Registers a<see cref="IReader{T}"/> with the <see cref="ContentManager{T}"/>.
+        /// Registers a<see cref="IReader{T}"/> with the <see cref="ContentManager{TKey}"/>.
         /// </summary>
         /// <param name="reader">The reference to the reader to to be registered.</param>
         /// <exception cref="ArgumentNullException">I the <see cref="reader"/> parameter is null.</exception>
@@ -214,7 +356,11 @@ namespace Codefarts.ContentManager
             // Check if 
             if (this.Readers.ContainsKey(reader.Type))
             {
-                throw new ArgumentException("A reader that reads the '{0}' type has already been added!");
+#if UNITY
+                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_ReaderAlreadyAdded"));
+#else
+                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_ReaderAlreadyAdded"));
+#endif
             }
 
             this.Readers.Add(reader.Type, reader);
@@ -223,23 +369,21 @@ namespace Codefarts.ContentManager
         /// <summary>
         /// Unloads all cached assets.
         /// </summary>
-        /// <remarks>If an asset implements <see cref="IDisposable"/> the assets <see cref="IDisposable.Dispose"/> method will be called.</remarks>
+        /// <remarks>If an asset implements <see cref="IDisposable"/> and <see cref="AutoDisposeOnUnload"/> the assets <see cref="IDisposable.Dispose"/> method will be called.</remarks>
         public virtual void Unload()
         {
-            try
+            if (this.AutoDisposeOnUnload)
             {
-                if (this.AutoDisposeOnUnload)
+                foreach (var disposable in this.Assets.Values)
                 {
-                    foreach (IDisposable disposable in this.Assets.Values)
+                    if (disposable is IDisposable)
                     {
-                        disposable.Dispose();
+                        ((IDisposable)disposable).Dispose();
                     }
                 }
             }
-            finally
-            {
-                this.Assets.Clear();
-            }
+
+            this.Assets.Clear();
         }
     }
 }

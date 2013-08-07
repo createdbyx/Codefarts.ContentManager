@@ -5,16 +5,18 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{3C076449-AFB7-34A8-65BF-89D84496CC0D}</ProjectGuid>
+    <ProjectGuid>{13314D26-962B-1354-7D4B-DD93F8A08289}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace></RootNamespace>
-    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <RootNamespace>
+    </RootNamespace>
+    <AssemblyName>Assembly-CSharp-Editor</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <TargetFrameworkIdentifier>.NETFramework</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Unity Subset v3.5</TargetFrameworkProfile>
-    <CompilerResponseFile></CompilerResponseFile>
+    <TargetFrameworkProfile>Unity Full v3.5</TargetFrameworkProfile>
+    <CompilerResponseFile>
+    </CompilerResponseFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -45,18 +47,43 @@
     <Reference Include="UnityEditor">
       <HintPath>Library\UnityAssemblies\UnityEditor.dll</HintPath>
     </Reference>
+    <Reference Include="SyntaxTree.VisualStudio.Unity.Bridge">
+      <HintPath>Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Bridge.dll</HintPath>
+    </Reference>
+    <Reference Include="SyntaxTree.VisualStudio.Unity.Messaging">
+      <HintPath>Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Messaging.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\ContentManager.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\IReader.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\HtmlData.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\HtmlReader.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\Texture2DReader.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\CoroutineManager.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\LoadingScript.cs" />
-    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Localization\LocalizationManager.cs" />
+    <ProjectReference Include="UnityVS.ContentManager for Unity.CSharp.csproj">
+      <Project>{3C076449-AFB7-34A8-65BF-89D84496CC0D}</Project>
+      <Name>UnityVS.ContentManager for Unity.CSharp</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\CoreGlobalConstants.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\EditorCallbackService.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\EditorCallbackServiceExtensions.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\EditorInitialization.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\GlobalSettingsMenuItem.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Interfaces\IRun.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Interfaces\ISettingTitle.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Models\CallbackModel.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Models\SettingsMenuModel.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\IValues.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\SettingsExtensionMethods.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\SettingsManager.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\ValueChangedEventArgs.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\ValuesExtensionMethods.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\XML\EqualityComparerCallback.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\XML\XmlDocumentLinqValues.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\Settings\XML\XmlDocumentSettingsHelpers.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\SubmitFeedbackWindow.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\UnityPreferencesManager.cs" />
     <None Include="Assets\Codefarts Game\ContentManager\Resources\Codefarts.Unity\Localization\en-us.txt" />
     <None Include="Assets\Codefarts Game\CoreProjectCode\Editor\Resources\Codefarts.Unity\Localization\en-us.txt" />
+    <None Include="Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Bridge.dll" />
+    <None Include="Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Messaging.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2012\UnityVS.CSharp.targets" />
 </Project>

@@ -1,0 +1,29 @@
+extensions: designer.cs generated.cs
+extensions: .cs .cpp .h
+/*
+<copyright>
+  Copyright (c) 2012 Codefarts
+  All rights reserved.
+  contact@codefarts.com
+  http://www.codefarts.com
+</copyright>
+*/
+extensions: .aspx .ascx
+<%-- 
+  Copyright (c) 2012 Codefarts
+  All rights reserved.
+  contact@codefarts.com
+  http://www.codefarts.com
+--%>
+extensions: .vb
+' Copyright (c) 2012 Codefarts
+' All rights reserved.
+' contact@codefarts.com
+' http://www.codefarts.com
+extensions:  .xml .config .xsd
+<!--
+  Copyright (c) 2012 Codefarts
+  All rights reserved.
+  contact@codefarts.com
+  http://www.codefarts.com
+-->
