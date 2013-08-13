@@ -18,9 +18,9 @@ namespace Codefarts.ContentManager.Scripts
     public class LoadingScript : MonoBehaviour
     {
         /// <summary>
-        ///  Holds a reference to the <see cref="ContentManager{TKey}"/> singleton.
+        /// Holds the google logo texture.
         /// </summary>
-        private ContentManager<Uri> manager;
+        private Texture2D googleTexture;
 
         /// <summary>
         /// Holds the html markup to display.
@@ -28,14 +28,14 @@ namespace Codefarts.ContentManager.Scripts
         private string html = string.Empty;
 
         /// <summary>
-        /// Holds the google logo texture.
-        /// </summary>
-        private Texture2D googleTexture;
-
-        /// <summary>
         /// Holds a reference to a game object that displays the html markup.
         /// </summary>
         private GameObject htmlObject;
+
+        /// <summary>
+        ///  Holds a reference to the <see cref="ContentManager{TKey}"/> singleton.
+        /// </summary>
+        private ContentManager<Uri> manager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LoadingScript"/> class.
@@ -43,23 +43,6 @@ namespace Codefarts.ContentManager.Scripts
         public LoadingScript()
         {
             this.manager = ContentManager<Uri>.Instance;
-        }
-
-        /// <summary>
-        /// Start is called just before any of the Update methods is called the first time.
-        /// </summary>
-        public void Start()
-        {
-            // get singleton instance to the codefarts content manager using a Uri as the key type
-            this.manager = ContentManager<Uri>.Instance;
-
-            // register readers
-            this.manager.Register(new HtmlReader());
-            this.manager.Register(new Texture2DReader());
-
-            // setup html game object
-            var find = GameObject.Find("HtmlText");
-            this.htmlObject = find == null ? new GameObject("HtmlText") : find;
         }
 
         /// <summary>
@@ -97,6 +80,31 @@ namespace Codefarts.ContentManager.Scripts
         }
 
         /// <summary>
+        /// Start is called just before any of the Update methods is called the first time.
+        /// </summary>
+        public void Start()
+        {
+            // get singleton instance to the codefarts content manager using a Uri as the key type
+            this.manager = ContentManager<Uri>.Instance;
+
+            // register readers
+            this.manager.Register(new HtmlReader());
+            this.manager.Register(new Texture2DReader());
+
+            // setup html game object
+            var find = GameObject.Find("HtmlText");
+            this.htmlObject = find == null ? new GameObject("HtmlText") : find;
+        }
+
+        /// <summary>
+        /// Update is called every frame, if the MonoBehaviour is enabled.
+        /// </summary>
+        public void Update()
+        {
+            this.guiText.enabled = this.manager.LoadingQueue > 0;
+        }
+
+        /// <summary>
         /// Sets up the html game object.
         /// </summary>
         /// <param name="data">
@@ -111,14 +119,6 @@ namespace Codefarts.ContentManager.Scripts
             text.fontSize = 24;
             text.font = this.guiText.font;
             this.htmlObject.transform.position = new Vector3(0.1f, 0.8f, 0);
-        }
-
-        /// <summary>
-        /// Update is called every frame, if the MonoBehaviour is enabled.
-        /// </summary>
-        public void Update()
-        {
-            this.guiText.enabled = this.manager.LoadingQueue > 0;
         }
     }
 }

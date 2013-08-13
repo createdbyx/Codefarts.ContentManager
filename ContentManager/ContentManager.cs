@@ -26,7 +26,7 @@ namespace Codefarts.ContentManager
         /// <summary>
         /// Holds a reference to the readers dictionary.
         /// </summary>
-        protected readonly Dictionary<Type, IReader<TKey>> Readers;
+        protected readonly Dictionary<Type, IList<IReader<TKey>>> Readers;
 
         /// <summary>
         /// Holds a singleton instance of a <see cref="ContentManager{TKey}"/> type.
@@ -58,7 +58,7 @@ namespace Codefarts.ContentManager
         {
             this.assets = new Dictionary<TKey, object>();
             this.rootDirectory = rootDirectory;
-            this.Readers = new Dictionary<Type, IReader<TKey>>();
+            this.Readers = new Dictionary<Type, IList<IReader<TKey>>>();
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace Codefarts.ContentManager
                 return this.loadingQueue;
             }
         }
-     
+
         /// <summary>
         /// Gets or sets the root directory associated with this <see cref="ContentManager{TKey}"/>.
         /// </summary>
@@ -154,9 +154,12 @@ namespace Codefarts.ContentManager
         /// <returns>Returns a <see cref="IEnumerable{T}"/> of <see cref="IReader{T}"/>'s.</returns>
         public virtual IEnumerable<IReader<TKey>> GetReaders()
         {
-            foreach (var reader in this.Readers)
+            foreach (var list in this.Readers)
             {
-                yield return reader.Value;
+                foreach (var reader in list.Value)
+                {
+                    yield return reader;
+                }
             }
         }
 
@@ -225,8 +228,29 @@ namespace Codefarts.ContentManager
 #endif
             }
 
-            // get reader and read asset
-            var reader = this.Readers[type];
+            // try to find a reader that can read the asset
+            var readers = this.Readers[type];
+            IReader<TKey> reader = null;
+            foreach (var item in readers)
+            {
+                if (item.CanRead(key, this))
+                {
+                    reader = item;
+                    break;
+                }
+            }
+
+            // if reader is not assigned throw exception
+            if (reader == null)
+            {
+#if UNITY
+                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
+#else
+                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
+#endif
+            }
+
+            // attempt to read the asset
             var readerObject = (TReturnValue)reader.Read(key, this);
 
             // if caching then ass returned value to the cache
@@ -311,8 +335,27 @@ namespace Codefarts.ContentManager
 #endif
             }
 
-            // get reader and read asset
-            var reader = this.Readers[type];
+            // try to find a reader that can read the asset
+            var readers = this.Readers[type];
+            IReader<TKey> reader = null;
+            foreach (var item in readers)
+            {
+                if (item.CanRead(key, this))
+                {
+                    reader = item;
+                    break;
+                }
+            }
+
+            // if reader is not assigned throw exception
+            if (reader == null)
+            {
+#if UNITY
+                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
+#else
+                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
+#endif
+            }
 
             // update the loading queue
             this.loadingQueue++;
@@ -354,7 +397,13 @@ namespace Codefarts.ContentManager
             }
 
             // Check if 
-            if (this.Readers.ContainsKey(reader.Type))
+            if (!this.Readers.ContainsKey(reader.Type))
+            {
+                this.Readers.Add(reader.Type, new List<IReader<TKey>>());
+            }
+
+            var list = this.Readers[reader.Type];
+            if (list.Contains(reader))
             {
 #if UNITY
                 throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_ReaderAlreadyAdded"));
@@ -363,7 +412,7 @@ namespace Codefarts.ContentManager
 #endif
             }
 
-            this.Readers.Add(reader.Type, reader);
+            list.Add(reader);
         }
 
         /// <summary>
