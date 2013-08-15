@@ -11,7 +11,7 @@ namespace Codefarts.ContentManager
     using System;
     using System.Collections.Generic;
 
-#if !UNITY
+#if !UNITY3D
     using Codefarts.ContentManager.Properties;
 #else
     using Codefarts.Localization;
@@ -221,7 +221,7 @@ namespace Codefarts.ContentManager
             var type = typeof(List<TReturnValue>).GetGenericArguments()[0];
             if (!this.Readers.ContainsKey(type))
             {
-#if UNITY
+#if UNITY3D
                 throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
 #else
                 throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
@@ -243,7 +243,7 @@ namespace Codefarts.ContentManager
             // if reader is not assigned throw exception
             if (reader == null)
             {
-#if UNITY
+#if UNITY3D
                 throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
 #else
                 throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
@@ -328,7 +328,7 @@ namespace Codefarts.ContentManager
             var type = typeof(List<TReturnValue>).GetGenericArguments()[0];
             if (!this.Readers.ContainsKey(type))
             {
-#if UNITY
+#if UNITY3D
                 throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
 #else
                 throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
@@ -350,7 +350,7 @@ namespace Codefarts.ContentManager
             // if reader is not assigned throw exception
             if (reader == null)
             {
-#if UNITY
+#if UNITY3D
                 throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
 #else
                 throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
@@ -405,7 +405,7 @@ namespace Codefarts.ContentManager
             var list = this.Readers[reader.Type];
             if (list.Contains(reader))
             {
-#if UNITY
+#if UNITY3D
                 throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_ReaderAlreadyAdded"));
 #else
                 throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_ReaderAlreadyAdded"));
