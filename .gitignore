@@ -178,3 +178,4 @@ $RECYCLE.BIN/
 *.ttf
 *.asset
 *.StyleCop
+/ContentManager for Unity/Assets/UnityVS/Editor
