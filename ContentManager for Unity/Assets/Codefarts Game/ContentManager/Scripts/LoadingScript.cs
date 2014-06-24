@@ -61,6 +61,16 @@ namespace Codefarts.ContentManager.Scripts
                 // asynchronously load google home page html markup
                 this.SetupHtmlObject(this.manager.Load<HtmlData>(new Uri("http://www.google.com")));
             }
+            
+            if (GUI.Button(new Rect(220, 45, 200, 25), "Reset"))
+            {
+                if (this.googleTexture != null)
+                {
+                    DestroyImmediate(this.googleTexture);
+                }
+                      
+                this.htmlObject.guiText.text = string.Empty;
+            }
 
             if (GUI.Button(new Rect(10, 45, 200, 25), "Load image asynchronously"))
             {
@@ -71,7 +81,7 @@ namespace Codefarts.ContentManager.Scripts
                     {
                         this.googleTexture = data;
                     });
-            }
+            }       
 
             if (this.googleTexture != null)
             {
@@ -89,7 +99,7 @@ namespace Codefarts.ContentManager.Scripts
 
             // register readers
             this.manager.Register(new HtmlReader());
-            this.manager.Register(new Texture2DReader());
+            this.manager.Register(new Texture2DUriReader());
 
             // setup html game object
             var find = GameObject.Find("HtmlText");

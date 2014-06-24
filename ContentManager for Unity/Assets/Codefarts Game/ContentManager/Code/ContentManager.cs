@@ -164,7 +164,7 @@ namespace Codefarts.ContentManager
         }
 
         /// <summary>
-        /// Asynchronously loads a asset from disk if not already done so and caches it.
+        /// Synchronously loads a asset from disk if not already done so and caches it.
         /// </summary>
         /// <typeparam name="TReturnValue">
         /// The asset type that will be returned.

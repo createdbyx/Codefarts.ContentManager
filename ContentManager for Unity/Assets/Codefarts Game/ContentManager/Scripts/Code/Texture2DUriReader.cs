@@ -18,7 +18,7 @@ namespace Codefarts.ContentManager.Scripts
     /// <summary>
     /// Provides a <see cref="Texture2D"/> reader.
     /// </summary>
-    public class Texture2DReader : IReader<Uri>
+    public class Texture2DUriReader : IReader<Uri>
     {
         /// <summary>
         /// Gets the <see cref="IReader{T}.Type"/> that this reader implementation returns.
