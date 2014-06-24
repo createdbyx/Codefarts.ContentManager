@@ -31,6 +31,11 @@ namespace Codefarts.CoreProjectCode.Services
         private readonly List<IRun> callbacks;
 
         /// <summary>
+        /// Used to determine whether callbacks are currently being run.
+        /// </summary>
+        private bool isRunning;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="EditorCallbackService"/> class.
         /// </summary>
         public EditorCallbackService()
@@ -55,13 +60,16 @@ namespace Codefarts.CoreProjectCode.Services
         /// </summary>
         public void Run()
         {
+            this.isRunning = true;
+
             var items = this.callbacks.OrderBy(x => x.Priority);
             foreach (var item in items)
             {
                 item.Run();
             }
-            
+
             this.callbacks.Clear();
+            this.isRunning = false;
         }
 
         /// <summary>
@@ -83,6 +91,11 @@ namespace Codefarts.CoreProjectCode.Services
             if (callback == null)
             {
                 throw new ArgumentNullException("callback");
+            }
+
+            if (this.isRunning)
+            {
+                throw new InvalidOperationException("Cannot register new callback while running callbacks.");
             }
 
             var modal = new CallbackModel<T> { Callback = callback, Data = data, Priority = priority };

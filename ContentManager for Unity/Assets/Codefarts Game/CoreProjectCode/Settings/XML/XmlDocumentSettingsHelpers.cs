@@ -8,6 +8,7 @@
 */
 namespace Codefarts.CoreProjectCode.Settings.Xml
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -28,7 +29,15 @@ namespace Codefarts.CoreProjectCode.Settings.Xml
         {
             // load the settings file using a XmlDocument object
             var xml = new XmlDocument();
-            xml.Load(file);
+           // xml.Load(file);
+                                
+            var data = string.Empty;
+            using (var stream = new StreamReader(file))
+            {
+                data = stream.ReadToEnd();
+            }
+
+            xml.LoadXml(data);
 
             // ensure that the documentation element root not is correct
             if (xml.DocumentElement == null || xml.DocumentElement.Name != "settings")
@@ -40,7 +49,7 @@ namespace Codefarts.CoreProjectCode.Settings.Xml
             var results = from x in xml.DocumentElement.ChildNodes.OfType<XmlNode>()
                           let attributes = x.Attributes
                           where attributes != null
-                          where x.Name == "entry" && attributes != null && attributes.Count > 0 
+                          where x.Name == "entry" && attributes != null && attributes.Count > 0
                           let key = attributes["key"]
                           where key != null && !string.IsNullOrEmpty(key.Value)
                           select new KeyValuePair<string, object>(key.InnerText, x.InnerText);

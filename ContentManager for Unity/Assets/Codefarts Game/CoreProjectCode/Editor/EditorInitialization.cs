@@ -89,8 +89,10 @@ namespace Codefarts.CoreProjectCode
             if (string.IsNullOrEmpty(settingsFilename))
             {
                 // set default path is my documents folder
-                settingsFilename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                settingsFilename = Path.Combine(settingsFilename, "CodefartsSettings.xml");
+                //settingsFilename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                //settingsFilename = Path.Combine(settingsFilename, "CodefartsSettings.xml");
+
+                settingsFilename = Application.dataPath + "/CodefartsSettings.xml";
 
                 // attempt to create initial settings file if not already present
                 if (!File.Exists(settingsFilename))

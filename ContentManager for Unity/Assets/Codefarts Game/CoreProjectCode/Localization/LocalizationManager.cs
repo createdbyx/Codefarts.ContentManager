@@ -38,7 +38,7 @@ namespace Codefarts.Localization
         {
             this.data = new Dictionary<CultureInfo, IDictionary<string, string>>();
             this.CurrentCulture = CultureInfo.CurrentCulture;
-            this.DefaultCulture = new CultureInfo("en-us");
+            this.DefaultCulture = CultureInfo.InstalledUICulture;
         }
 
         /// <summary>
@@ -73,15 +73,17 @@ namespace Codefarts.Localization
             try
             {
                 // check if key is present in the current culture
-                if (this.CurrentCulture != null && this.data.ContainsKey(this.CurrentCulture) && this.data[this.CurrentCulture].ContainsKey(key))
+                var culture = this.CurrentCulture;
+                if (culture != null && this.data.ContainsKey(culture) && this.data[culture].ContainsKey(key))
                 {
-                    return this.data[this.CurrentCulture][key];
+                    return this.data[culture][key];
                 }
 
                 // try the default fall back culture
-                if (this.DefaultCulture != null && this.data.ContainsKey(this.DefaultCulture) && this.data[this.DefaultCulture].ContainsKey(key))
+                culture = this.DefaultCulture;
+                if (culture != null && this.data.ContainsKey(culture) && this.data[culture].ContainsKey(key))
                 {
-                    return this.data[this.DefaultCulture][key];
+                    return this.data[culture][key];
                 }
             }
             catch (Exception)

@@ -143,7 +143,7 @@ namespace Codefarts.CoreProjectCode
 
                     // attempt to parse the url and transmit the message data
                     Uri url;
-                    if (Uri.TryCreate("http://www.codefarts.com/SubmitFeedbackXml/", UriKind.Absolute, out url))
+                    if (Uri.TryCreate("http://www.codefarts.com/submitfeedback", UriKind.Absolute, out url))
                     {
                         // asynchronously post the message
                         this.client.UploadValuesAsync(url, "POST", data);
@@ -235,47 +235,27 @@ namespace Codefarts.CoreProjectCode
 
             try
             {
-                // read the result data as xml
-                var doc = new XmlDocument();
-                var xml = System.Text.Encoding.UTF8.GetString(e.Result);
-                doc.LoadXml(xml);
-
-                // validate the the xml root node is 'result'
-                if (doc.DocumentElement != null && doc.DocumentElement.Name == "result")
+                var data = System.Text.Encoding.UTF8.GetString(e.Result);
+                var json = Editor.JSON.Parse(data);
+                  // attempt to get the success and message element values
+                var messageElement = json["Message"].Value;
+                var successElement = json["Success"].AsBool;
+               
+                // if not successful report the error
+                if (!successElement)
                 {
-                    // attempt to get the success and message element values
-                    var messageElement = doc.DocumentElement["message"];
-                    var successElement = doc.DocumentElement["success"];
-
-                    if (messageElement == null)
-                    {
-                        throw new XmlException(local.Get("ERR_CouldNotFindMessageElement"));
-                    }
-
-                    if (successElement == null)
-                    {
-                        throw new XmlException(local.Get("ERR_CouldNotFindSuccessElement"));
-                    }
-
-                    bool successValue;
-                    if (!bool.TryParse(successElement.InnerText, out successValue))
-                    {
-                        throw new XmlException(local.Get("ERR_CouldNotParseSuccessElement"));
-                    }
-
-                    var messageValue = messageElement.InnerText;
-
-                    // if not successful report the error
-                    if (!successValue)
-                    {
-                        this.errorMessage = messageValue;
-                        return;
-                    }
-
-                    // set status to the message.
-                    this.statusMessage = messageValue;
-                    this.successfullySubmitted = true;
+                    this.errorMessage = messageElement;
+                    return;
                 }
+
+                // set status to the message.
+                this.statusMessage = messageElement;
+                this.successfullySubmitted = true;
+               
+                //if (this.HandleXmlResponse(e, local))
+                //{
+                //    return;
+                //}
             }
             catch (Exception ex)
             {
@@ -290,6 +270,53 @@ namespace Codefarts.CoreProjectCode
             this.email = string.Empty;
             this.subject = string.Empty;
             this.message = string.Empty;
+        }
+
+        private bool HandleXmlResponse(UploadValuesCompletedEventArgs e, LocalizationManager local)
+        {
+            // read the result data as xml
+            var doc = new XmlDocument();
+            var xml = System.Text.Encoding.UTF8.GetString(e.Result);
+            doc.LoadXml(xml);
+
+            // validate the the xml root node is 'result'
+            if (doc.DocumentElement != null && doc.DocumentElement.Name == "result")
+            {
+                // attempt to get the success and message element values
+                var messageElement = doc.DocumentElement["message"];
+                var successElement = doc.DocumentElement["success"];
+
+                if (messageElement == null)
+                {
+                    throw new XmlException(local.Get("ERR_CouldNotFindMessageElement"));
+                }
+
+                if (successElement == null)
+                {
+                    throw new XmlException(local.Get("ERR_CouldNotFindSuccessElement"));
+                }
+
+                bool successValue;
+                if (!bool.TryParse(successElement.InnerText, out successValue))
+                {
+                    throw new XmlException(local.Get("ERR_CouldNotParseSuccessElement"));
+                }
+
+                var messageValue = messageElement.InnerText;
+
+                // if not successful report the error
+                if (!successValue)
+                {
+                    this.errorMessage = messageValue;
+                    return true;
+                }
+
+                // set status to the message.
+                this.statusMessage = messageValue;
+                this.successfullySubmitted = true;
+            }
+
+            return false;
         }
     }
 }
