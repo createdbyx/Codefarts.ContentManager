@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30110.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Codefarts.ContentManager", "ContentManager\Codefarts.ContentManager.csproj", "{85AE6130-A4FE-4187-9430-9B68083A4B53}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityVS.ContentManager for Unity.CSharp", "ContentManager for Unity\UnityVS.ContentManager for Unity.CSharp.csproj", "{3C076449-AFB7-34A8-65BF-89D84496CC0D}"
@@ -13,7 +15,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsPhoneGameExample", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsPhoneGameExampleContent", "WindowsPhoneGameExample\WindowsPhoneGameExampleContent\WindowsPhoneGameExampleContent.contentproj", "{2B0A3929-B28D-4CB8-8C37-C1A8732B6B90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Codefarts.ContentManager.Tests", "Codefarts.ContentManager.Tests\Codefarts.ContentManager.Tests.csproj", "{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}"
+EndProject
 Global
+	GlobalSection(CodealikeProperties) = postSolution
+		SolutionGuid = 3b84ae2d-3dfc-4e79-a3d4-73a791cb659f
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -97,6 +104,18 @@ Global
 		{2B0A3929-B28D-4CB8-8C37-C1A8732B6B90}.Release|Mixed Platforms.ActiveCfg = Release|Windows Phone
 		{2B0A3929-B28D-4CB8-8C37-C1A8732B6B90}.Release|Windows Phone.ActiveCfg = Release|Windows Phone
 		{2B0A3929-B28D-4CB8-8C37-C1A8732B6B90}.Release|x86.ActiveCfg = Release|Windows Phone
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Debug|Windows Phone.ActiveCfg = Debug|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Release|Windows Phone.ActiveCfg = Release|Any CPU
+		{6E1ACBF6-ABBF-47D1-9020-912AD53B7468}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

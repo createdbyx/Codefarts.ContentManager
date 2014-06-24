@@ -120,7 +120,13 @@
   <data name="ContentManager_ERR_NoReaderIsAvailable" xml:space="preserve">
     <value>No reader is available for the specified type.</value>
   </data>
+  <data name="ContentManager_ERR_NoWriterIsAvailable" xml:space="preserve">
+    <value>No writer is available for the specified type.</value>
+  </data>
   <data name="ContentManager_ERR_ReaderAlreadyAdded" xml:space="preserve">
     <value>A reader that reads the '{0}' type has already been added!</value>
+  </data>
+  <data name="ContentManager_ERR_WriterAlreadyAdded" xml:space="preserve">
+    <value>A writer that writes the '{0}' type has already been added!</value>
   </data>
 </root>

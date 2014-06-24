@@ -29,6 +29,11 @@ namespace Codefarts.ContentManager
         protected readonly Dictionary<Type, IList<IReader<TKey>>> Readers;
 
         /// <summary>
+        /// Holds a reference to the writers dictionary.
+        /// </summary>
+        protected readonly Dictionary<Type, IList<IWriter<TKey>>> Writers;
+
+        /// <summary>
         /// Holds a singleton instance of a <see cref="ContentManager{TKey}"/> type.
         /// </summary>
         private static ContentManager<TKey> singleton;
@@ -43,6 +48,11 @@ namespace Codefarts.ContentManager
         /// </summary>
         private int loadingQueue;
 
+        /// <summary>
+        /// Holds the saving queue value for the <see cref="SavingQueue"/> property.
+        /// </summary>
+        private int savingQueue;
+        
         /// <summary>
         /// Holds the value for the <see cref="RootDirectory"/> property.    
         /// </summary>
@@ -59,6 +69,7 @@ namespace Codefarts.ContentManager
             this.assets = new Dictionary<TKey, object>();
             this.rootDirectory = rootDirectory;
             this.Readers = new Dictionary<Type, IList<IReader<TKey>>>();
+            this.Writers = new Dictionary<Type, IList<IWriter<TKey>>>();
         }
 
         /// <summary>
@@ -115,6 +126,18 @@ namespace Codefarts.ContentManager
         }
 
         /// <summary>
+        /// Gets the asynchronous saving queue.
+        /// </summary>
+        /// <remarks>This value indicates the number of unfinished asynchronous save operations.</remarks>
+        public int SavingQueue
+        {
+            get
+            {
+                return this.savingQueue;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the root directory associated with this <see cref="ContentManager{TKey}"/>.
         /// </summary>
         public virtual string RootDirectory
@@ -164,7 +187,23 @@ namespace Codefarts.ContentManager
         }
 
         /// <summary>
-        /// Asynchronously loads a asset from disk if not already done so and caches it.
+        /// Gets a <see cref="IEnumerable{T}"/> of type <see cref="IWriter{T}"/> types that have been registered with the <see cref="ContentManager{TKey}"/>.
+        /// </summary>
+        /// <returns>Returns a <see cref="IEnumerable{T}"/> of <see cref="IWriter{T}"/>'s.</returns>
+        public virtual IEnumerable<IWriter<TKey>> GetWriters()
+        {
+            foreach (var list in this.Writers)
+            {
+                foreach (var writer in list.Value)
+                {
+                    yield return writer;
+                }
+            }
+        }
+
+        #region Load Methods
+        /// <summary>
+        /// Synchronously loads a asset from disk if not already done so and caches it.
         /// </summary>
         /// <typeparam name="TReturnValue">
         /// The asset type that will be returned.
@@ -382,6 +421,149 @@ namespace Codefarts.ContentManager
                 callback((TReturnValue)readerObject);
             });
         }
+        #endregion
+
+        #region Save Methods
+
+        /// <summary>
+        /// Saves a asset to disk.
+        /// </summary>
+        /// <typeparam name="TData">The asset type that will be saved.</typeparam>
+        /// <param name="key">
+        /// The key that points to the asset to save.
+        /// </param>
+        /// <param name="data">
+        /// The data to be saved.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// If the <see cref="key"/> is a string type and has no value.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        /// If unable to find a registered <see cref="IWriter{T}.Type"/> that matches the <see cref="TData"/> type.
+        /// </exception>
+        /// <exception cref="NullReferenceException">
+        /// Can occur if no writer for type <see cref="TData"/> could be found.
+        /// </exception>
+        public virtual void Save<TData>(TKey key, TData data)
+        {
+            // if "key" is a string type check if the string is empty and if so throw an exception
+            if (key is string && string.IsNullOrEmpty((key as string).Trim()))
+            {
+                throw new ArgumentNullException("key");
+            }
+
+            // try to find a matching writer that writes the same type specified with "TData"
+            var type = typeof(List<TData>).GetGenericArguments()[0];
+            if (!this.Writers.ContainsKey(type))
+            {
+#if UNITY3D
+                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
+#else
+                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
+#endif
+            }
+
+            // try to find a writer that can write the data
+            var writers = this.Writers[type];
+            IWriter<TKey> writer = null;
+            foreach (var item in writers)
+            {
+                if (item.CanWrite(key, this))
+                {
+                    writer = item;
+                    break;
+                }
+            }
+
+            // if reader is not assigned throw exception
+            if (writer == null)
+            {
+#if UNITY3D
+                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
+#else
+                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
+#endif
+            }
+
+            // attempt to write the asset
+            writer.Write(key, data, this);
+        }
+
+        /// <summary>
+        /// Asynchronously saves a asset to disk.
+        /// </summary>
+        /// <typeparam name="TData">The asset type that will be saved.</typeparam>
+        /// <param name="key">The key that points to the asset to save.</param>
+        /// <param name="data">
+        /// The data to be saved.
+        /// </param>
+        /// <param name="completedCallback">A reference to a callback method that will be invoked when saving completes.</param>
+        /// <exception cref="ArgumentNullException">If the <see cref="key"/> is a string type and has no value, or the <see cref="completedCallback"/> is null.</exception>
+        /// <exception cref="ArgumentException">If unable to find a registered <see cref="IWriter{T}.Type"/> that matches the <see cref="TData"/> type.</exception>
+        /// <exception cref="NullReferenceException">Can occur if no writer for type <see cref="TData"/> could be found.</exception>
+        public virtual void Save<TData>(TKey key, TData data, Action completedCallback)
+        {
+            if (completedCallback == null)
+            {
+                throw new ArgumentNullException("completedCallback");
+            }
+
+            var callback = new Action(
+                () =>
+                {
+                    // update saving queue
+                    this.savingQueue = Math.Max(0, this.savingQueue - 1);
+
+                    // if a callback was specified call it now and pass in the reference to the loaded asset
+                    completedCallback();
+                });
+
+            // if "key" is a string type check if the string is empty and if so throw an exception
+            if (key is string && string.IsNullOrEmpty((key as string).Trim()))
+            {
+                throw new ArgumentNullException("key");
+            }
+
+            // try to find a matching reader that return the same type specified with "TReturnValue"
+            var type = typeof(List<TData>).GetGenericArguments()[0];
+            if (!this.Writers.ContainsKey(type))
+            {
+#if UNITY3D
+                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
+#else
+                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
+#endif
+            }
+
+            // try to find a writer that can save the data
+            var writers = this.Writers[type];
+            IWriter<TKey> writer = null;
+            foreach (var item in writers)
+            {
+                if (item.CanWrite(key, this))
+                {
+                    writer = item;
+                    break;
+                }
+            }
+
+            // if writer is not assigned throw exception
+            if (writer == null)
+            {
+#if UNITY3D
+                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
+#else
+                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
+#endif
+            }
+
+            // update the saving queue
+            this.savingQueue++;
+
+            // perform asynchronous write
+            writer.WriteAsync(key, data, this, callback);
+        }
+        #endregion
 
         /// <summary>
         /// Registers a<see cref="IReader{T}"/> with the <see cref="ContentManager{TKey}"/>.
@@ -416,6 +598,38 @@ namespace Codefarts.ContentManager
         }
 
         /// <summary>
+        /// Registers a<see cref="IReader{T}"/> with the <see cref="ContentManager{TKey}"/>.
+        /// </summary>
+        /// <param name="writer">The reference to the writer to to be registered.</param>
+        /// <exception cref="ArgumentNullException">I the <see cref="writer"/> parameter is null.</exception>
+        /// <exception cref="ArgumentException">If a writer has already been registered that writes the same type.</exception>
+        public virtual void Register(IWriter<TKey> writer)
+        {
+            if (writer == null)
+            {
+                throw new ArgumentNullException("writer");
+            }
+
+            // Check if 
+            if (!this.Writers.ContainsKey(writer.Type))
+            {
+                this.Writers.Add(writer.Type, new List<IWriter<TKey>>());
+            }
+
+            var list = this.Writers[writer.Type];
+            if (list.Contains(writer))
+            {
+#if UNITY3D
+                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_WriterAlreadyAdded"));
+#else
+                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_WriterAlreadyAdded"));
+#endif
+            }
+
+            list.Add(writer);
+        }
+
+        /// <summary>
         /// Unloads all cached assets.
         /// </summary>
         /// <remarks>If an asset implements <see cref="IDisposable"/> and <see cref="AutoDisposeOnUnload"/> the assets <see cref="IDisposable.Dispose"/> method will be called.</remarks>
@@ -425,9 +639,10 @@ namespace Codefarts.ContentManager
             {
                 foreach (var disposable in this.Assets.Values)
                 {
-                    if (disposable is IDisposable)
+                    var disposableObject = disposable as IDisposable;
+                    if (disposableObject != null)
                     {
-                        ((IDisposable)disposable).Dispose();
+                        disposableObject.Dispose();
                     }
                 }
             }
