@@ -80,6 +80,7 @@
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\Texture2DUriReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\CoroutineManager.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\LoadingScript.cs" />
+    <Compile Include="Assets\Codefarts Game\CoreProjectCode\Localization\LocalizationHelpers.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Localization\LocalizationManager.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Settings\IValues.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Settings\SettingsExtensionMethods.cs" />

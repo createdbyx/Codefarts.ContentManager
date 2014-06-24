@@ -24,7 +24,7 @@ namespace Codefarts.ContentManager.Scripts
 
         private bool isCapturingScreenShot;
 
-        private string objectFilePath = @"C:\Users\Dean\Documents\AeroFS\Unity\Codefarts.GridMapping\Assets\Codefarts Game\Grid Mapping\Resources\Codefarts.Unity\Source Meshes\InsideCornerBox2D.obj";
+        private string objectFilePath = string.Empty;
 
         public void OnPostRender()
         {

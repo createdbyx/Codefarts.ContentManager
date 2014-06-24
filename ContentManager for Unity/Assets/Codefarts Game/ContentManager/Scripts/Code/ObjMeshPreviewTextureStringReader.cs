@@ -33,7 +33,6 @@
         /// <returns>Returns a type representing the data.</returns>
         public object Read(string key, ContentManager<string> content)
         {
-
             // hide and disable all top level objects
             var roots = new List<Transform>();
             var objects = GameObject.FindObjectsOfType<Transform>();
