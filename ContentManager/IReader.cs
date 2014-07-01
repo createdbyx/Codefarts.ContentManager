@@ -9,7 +9,7 @@
 namespace Codefarts.ContentManager
 {
     using System;
-    
+
     /// <summary>
     /// Provides a interface for content readers.
     /// </summary>
@@ -45,6 +45,6 @@ namespace Codefarts.ContentManager
         /// <param name="key">The id to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        void ReadAsync(T key, ContentManager<T> content, Action<object> completedCallback);
+        void ReadAsync(T key, ContentManager<T> content, Action<ReadAsyncArgs<T, object>> completedCallback);
     }
 }
