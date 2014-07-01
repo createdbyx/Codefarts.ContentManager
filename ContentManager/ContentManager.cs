@@ -59,11 +59,6 @@ namespace Codefarts.ContentManager
         private string rootDirectory;
 
         /// <summary>
-        /// Holds a object reference used for locking
-        /// </summary>
-        private object lockObject = new object();
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ContentManager{TKey}"/> class. 
         /// </summary>
         /// <param name="rootDirectory">
@@ -344,7 +339,7 @@ namespace Codefarts.ContentManager
             {
                 throw new ArgumentNullException("completedCallback");
             }
-                
+
             // if "key" is a string type check if the string is empty and if so throw an exception
             if (key is string && string.IsNullOrEmpty((key as string).Trim()))
             {
@@ -354,17 +349,19 @@ namespace Codefarts.ContentManager
             // if already cached returned the cached asset
             if (this.Assets.ContainsKey(key))
             {
-                lock (this.lockObject)
-                {
-                    var args = ReadAsyncArgs<TKey, TReturnValue>.SharedArgs;
-                    args.Key = key;
-                    args.Progress = 100.0f;
-                    args.State = ReadState.Completed;
-                    args.Result = (TReturnValue)this.Assets[key];
+#if USEOBJECTPOOLING
+            var args = ObjectPoolManager<ReadAsyncArgs<TKey, TReturnValue>>.Instance.Pop();
+#else
+                var args = new ReadAsyncArgs<TKey, TReturnValue>();
+#endif
+                args.Key = key;
+                args.Progress = 100.0f;
+                args.State = ReadState.Completed;
+                args.Result = (TReturnValue)this.Assets[key];
 
-                    // if a callback was specified call it now and pass in the reference to the loaded asset
-                    completedCallback(args);
-                }
+                // if a callback was specified call it now and pass in the reference to the loaded asset
+                completedCallback(args);
+
 
                 return;
             }
@@ -412,31 +409,35 @@ namespace Codefarts.ContentManager
             readerObject =>
             {
                 // if caching then add returned value to the cache
-                if (readerObject.State == ReadState.Completed && cache)
+                if (readerObject.State == ReadState.Completed)
                 {
                     // update loading queue
                     this.loadingQueue = Math.Max(0, this.loadingQueue - 1);
-                 
-                    lock (this.assets)
+
+                    if (cache)
                     {
-                        if (!this.assets.ContainsKey(key))
+                        lock (this.assets)
                         {
-                            this.assets.Add(key, readerObject.Result);
+                            if (!this.assets.ContainsKey(key))
+                            {
+                                this.assets.Add(key, readerObject.Result);
+                            }
                         }
                     }
                 }
 
-                lock (this.lockObject)
-                {
-                    var args = ReadAsyncArgs<TKey, TReturnValue>.SharedArgs;
-                    args.Key = readerObject.Key;
-                    args.Progress = readerObject.Progress;
-                    args.State = readerObject.State;
-                    args.Result = (TReturnValue)this.Assets[key];
+#if USEOBJECTPOOLING
+            var args = ObjectPoolManager<ReadAsyncArgs<TKey, TReturnValue>>.Instance.Pop();
+#else
+                var args = new ReadAsyncArgs<TKey, TReturnValue>();
+#endif
+                args.Key = readerObject.Key;
+                args.Progress = readerObject.Progress;
+                args.State = readerObject.State;
+                args.Result = (TReturnValue)readerObject.Result;
 
-                    // if a callback was specified call it now and pass in the reference to the loaded asset
-                    completedCallback(args);
-                }
+                // if a callback was specified call it now and pass in the reference to the loaded asset
+                completedCallback(args);
             });
         }
         #endregion

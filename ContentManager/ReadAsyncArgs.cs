@@ -7,6 +7,8 @@
 
 namespace Codefarts.ContentManager
 {
+    using System;
+
     /// <summary>
     /// Provides arguments for asynchronous read operations.
     /// </summary>
@@ -48,6 +50,27 @@ namespace Codefarts.ContentManager
         /// Holds the progres of the read operation.
         /// </summary>
         private float progress;
+
+        /// <summary>
+        /// Holds a reference to an error.
+        /// </summary>
+        private Exception error;
+
+        /// <summary>
+        /// Gets or sets the error.
+        /// </summary>     
+        public Exception Error
+        {
+            get
+            {
+                return this.error;
+            }
+
+            set
+            {
+                this.error = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the key that is being read.
