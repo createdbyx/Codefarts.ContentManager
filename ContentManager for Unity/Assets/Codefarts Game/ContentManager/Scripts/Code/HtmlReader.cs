@@ -10,9 +10,13 @@ namespace Codefarts.ContentManager.Scripts
 {
     using System;
     using System.Collections;
+    using System.IO;
     using System.Net;
 
     using Codefarts.ContentManager;
+#if USEOBJECTPOOLING
+    using Codefarts.ObjectPooling;
+#endif
 
     using UnityEngine;
 
@@ -40,8 +44,12 @@ namespace Codefarts.ContentManager.Scripts
         /// <returns>Returns a type representing the data.</returns>
         public object Read(Uri key, ContentManager<Uri> content)
         {
-            var client = new WebClient();
-            var data = new HtmlData() { Markup = client.DownloadString(key) };
+            HtmlData data;
+            using (var client = new WebClient())
+            {
+                data = new HtmlData() { Markup = client.DownloadString(key) };
+            }
+
             return data;
         }
 
@@ -62,7 +70,7 @@ namespace Codefarts.ContentManager.Scripts
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        public void ReadAsync(Uri key, ContentManager<Uri> content, Action<object> completedCallback)
+        public void ReadAsync(Uri key, ContentManager<Uri> content, Action<ReadAsyncArgs<Uri, object>> completedCallback)
         {
             if (completedCallback == null)
             {
@@ -79,12 +87,72 @@ namespace Codefarts.ContentManager.Scripts
         /// <param name="url">The url to be requested.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
         /// <returns>Returns a <see cref="IEnumerable"/> coroutine.</returns>
-        private IEnumerator GetData(Uri url, Action<object> completedCallback)
+        private IEnumerator GetData(Uri url, Action<ReadAsyncArgs<Uri, object>> completedCallback)
         {
-            var www = new WWW(url.ToString());
-            yield return www;
+            var client = new WebClient();
+#if USEOBJECTPOOLING
+            var args = ObjectPoolManager<ReadAsyncArgs<Uri, object>>.Instance.Pop();
+#else
+            var args = new ReadAsyncArgs<Uri, object>();
+#endif
 
-            completedCallback(new HtmlData { Markup = !string.IsNullOrEmpty(www.error) ? www.error : www.text });
+            args.Result = null;
+            args.Key = url;
+            args.State = ReadState.Working;
+            byte[] data = null;
+            client.DownloadProgressChanged += (s, e) =>
+            {
+                args.Progress = e.ProgressPercentage;
+            };
+
+            client.DownloadDataCompleted += (s, e) =>
+            {
+                args.Progress = 100;
+                args.State = ReadState.Completed;
+
+                if (e.Error == null)
+                {
+                    data = e.Result;
+                }
+                else
+                {
+                    args.Error = e.Error;
+                }
+            };
+
+            client.DownloadDataAsync(url);
+            while (args.Error == null && args.State != ReadState.Completed)
+            {
+                completedCallback(args);
+                yield return new WaitForFixedUpdate();
+            }
+
+            // if no error try to load image
+            if (args.Error == null)
+            {
+                try
+                {
+                    using (var memoryStream = new MemoryStream(data))
+                    {
+                        using (var reader = new StreamReader(memoryStream))
+                        {
+                            var dataString = reader.ReadToEnd();
+                            args.Result = new HtmlData { Markup = dataString };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    args.Error = ex;
+                    args.Result = null;
+                }
+            }
+            else
+            {
+                Debug.Log(args.Error.ToString());
+            }
+
+            completedCallback(args);  
         }
     }
 }

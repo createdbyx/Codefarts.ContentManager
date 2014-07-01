@@ -1,11 +1,21 @@
-﻿namespace Codefarts.ContentManager.Scripts
+﻿// <copyright>
+//   Copyright (c) 2012 Codefarts
+//   All rights reserved.
+//   contact@codefarts.com
+//   http://www.codefarts.com
+// </copyright>
+
+namespace Codefarts.ContentManager.Scripts
 {
     using System;
     using System.Collections;
     using System.IO;
-    using System.Linq;
 
     using UnityEngine;
+
+#if USEOBJECTPOOLING
+    using Codefarts.ObjectPooling;
+#endif
 
     /// <summary>
     /// Provides a <see cref="Texture2D"/> reader.
@@ -31,7 +41,8 @@
         /// <returns>Returns a type representing the data.</returns>
         public object Read(string key, ContentManager<string> content)
         {
-            var texture = new Texture2D(4, 4, TextureFormat.DXT5, true);
+            var texture = new Texture2D(4, 4);
+            key = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
             texture.LoadImage(File.ReadAllBytes(key));
             return texture;
         }
@@ -45,7 +56,8 @@
         public bool CanRead(string key, ContentManager<string> content)
         {
             var extension = Path.GetExtension(key);
-            return extension == ".jpg" || extension == ".jpeg" || extension == ".png";
+            key = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);  
+            return (extension == ".jpg" || extension == ".jpeg" || extension == ".png") && File.Exists(key);
         }
 
         /// <summary>
@@ -54,14 +66,41 @@
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        public void ReadAsync(string key, ContentManager<string> content, Action<object> completedCallback)
+        public void ReadAsync(string key, ContentManager<string> content, Action<ReadAsyncArgs<string, object>> completedCallback)
         {
-           UnityThreadHelper.Dispatcher.Dispatch(() =>
+            if (completedCallback == null)
             {
-                var texture = new Texture2D(4, 4, TextureFormat.DXT5, true);
-                texture.LoadImage(File.ReadAllBytes(key));
-                completedCallback(texture);
-            });
+                throw new ArgumentNullException("completedCallback");
+            }
+
+            var scheduler = CoroutineManager.Instance;
+            scheduler.StartCoroutine(this.GetData(key, content, completedCallback));
+        }
+
+        /// <summary>
+        /// Gets the data from the 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="content">A reference to the content manager that invoked the read.</param>
+        /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
+        /// <returns>Returns a <see cref="IEnumerable"/> coroutine.</returns>
+        private IEnumerator GetData(string key, ContentManager<string> content, Action<ReadAsyncArgs<string, object>> completedCallback)
+        {
+            var texture = new Texture2D(4, 4);
+            key = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
+            texture.LoadImage(File.ReadAllBytes(key));
+
+#if USEOBJECTPOOLING
+            var args = ObjectPoolManager<ReadAsyncArgs<string, object>>.Instance.Pop();
+#else
+            var args = new ReadAsyncArgs<string, object>();
+#endif
+            args.Progress = 100;
+            args.State = ReadState.Completed;
+            args.Key = key;
+            args.Result = texture;
+            completedCallback(args);
+            return null;
         }
     }
 }

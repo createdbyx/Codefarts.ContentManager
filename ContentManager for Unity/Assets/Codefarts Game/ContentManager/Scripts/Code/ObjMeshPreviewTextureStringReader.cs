@@ -1,19 +1,43 @@
-﻿namespace Codefarts.ContentManager.Scripts
+﻿// <copyright>
+//   Copyright (c) 2012 Codefarts
+//   All rights reserved.
+//   contact@codefarts.com
+//   http://www.codefarts.com
+// </copyright>
+
+namespace Codefarts.ContentManager.Scripts
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
+    using System.Text;
 
     using Codefarts.ContentManager.Scripts.Code;
 
+    using ObjLoader.Loader.Loaders;
+
     using UnityEngine;
+
+#if USEOBJECTPOOLING
+    using Codefarts.ObjectPooling;
+#endif
+
+    using Object = UnityEngine.Object;
 
     /// <summary>
     /// Provides a <see cref="Texture2D"/> reader.
     /// </summary>
-    public class ObjMeshPreviewTextureStringReader : IReader<string>
+    public class ObjMeshPreviewTextureStringReader : IReader<MeshPreviewTextureArgs>
     {
+        private struct RootObject
+        {
+            public Transform transform;
+            public bool activeState;
+        }
+
         /// <summary>
         /// Gets the <see cref="IReader{T}.Type"/> that this reader implementation returns.
         /// </summary>
@@ -31,26 +55,223 @@
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <returns>Returns a type representing the data.</returns>
-        public object Read(string key, ContentManager<string> content)
+        public object Read(MeshPreviewTextureArgs key, ContentManager<MeshPreviewTextureArgs> content)
         {
+            var meshPreviewTexture = this.DoLoadCache(key);
+            if (meshPreviewTexture != null)
+            {
+                return meshPreviewTexture;
+            }
+
             // hide and disable all top level objects
-            var roots = new List<Transform>();
+            var roots = this.HideTopLevelObjects();
+
+            GameObject cameraObject;
+            Camera camera;
+            var previewObject = this.DoSetupObjects(key, out cameraObject, out camera);
+
+            // TODO: Hide mesh renderes before rendering to prevent any other scene data from being rendered along with preview
+
+            // we need to manually render one frame with the camera here
+            camera.Render();
+
+            // generate a preview texture
+            var texture = new Texture2D(key.Width, key.Height, TextureFormat.ARGB32, true);
+            texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
+            texture.Apply();
+
+            // destroy preview objects
+            Object.DestroyImmediate(previewObject);
+            Object.DestroyImmediate(cameraObject);
+
+            this.DoRestoreScene(roots);
+
+            this.DoSaveToCache(key, texture);
+
+            return new MeshPreviewTexture() { Texture = texture };
+        }
+
+        private MeshPreviewTexture DoLoadCache(MeshPreviewTextureArgs key)
+        {
+            if (!key.LoadFromCache)
+            {
+                return null;
+            }
+
+            if (!Directory.Exists(key.CacheFolder))
+            {
+                return null;
+            }
+
+            var path = Path.Combine(key.CacheFolder, "MeshPreviewCache");
+            Directory.CreateDirectory(path);
+
+            var sha256 = MD5.Create();  
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(key.Key));
+            var result = Convert.ToBase64String(bytes);
+
+            path = Path.Combine(path, result + ".png");
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            var texture = new Texture2D(4, 4, TextureFormat.ARGB32, true);
+            if (texture.LoadImage(File.ReadAllBytes(path)))
+            {
+                return new MeshPreviewTexture() { Texture = texture };
+            }
+
+            Object.DestroyImmediate(texture);
+            return null;
+        }
+
+        private void DoRestoreScene(List<RootObject> roots)
+        {
+            // restore the scene        
+            foreach (var rootObject in roots)
+            {
+                rootObject.transform.gameObject.SetActive(rootObject.activeState);
+            }
+        }
+
+        private GameObject DoSetupObjects(MeshPreviewTextureArgs key, out GameObject cameraObject, out Camera camera)
+        {
+            // load object
+            var previewObject = new GameObject("PreviewMesh");
+            this.LoadPreviewGameObjects(key.Key, previewObject);
+
+            previewObject.AddComponent<MeshRenderer>();
+            previewObject.transform.position = Vector3.zero;
+            previewObject.renderer.material = key.Material == null ? new Material(Shader.Find("Diffuse")) : key.Material;
+
+            // setup preview camera
+            cameraObject = new GameObject("PreviewCamera");
+            camera = cameraObject.AddComponent<Camera>();
+            camera.backgroundColor = key.BackgroundColor;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+
+            // calc size of view port
+            camera.pixelRect = new Rect(0, 0, key.Width, key.Height);
+
+            // calc max radius of the object render bounds
+            var halfSize = previewObject.renderer.bounds.extents; // bounds.extents;
+            var radius = halfSize.x > halfSize.y ? halfSize.x : halfSize.y;
+            radius = radius > halfSize.z ? radius : halfSize.z;
+
+            // calculate how far to position the camera away from the object
+            var dist = radius / (float)Math.Sin(camera.fieldOfView * (Math.PI / 180) / 2);
+            camera.transform.position = new Vector3(dist, dist, 0);
+            camera.transform.LookAt(previewObject.transform.position);
+            return previewObject;
+        }
+
+        private void DoSaveToCache(MeshPreviewTextureArgs key, Texture2D texture)
+        {
+            if (key.SaveToCache)
+            {
+                if (!Directory.Exists(key.CacheFolder))
+                {
+                    throw new DirectoryNotFoundException("Cache folder appears to me missing!");
+                }
+
+                var path = Path.Combine(key.CacheFolder, "MeshPreviewCache");
+                Directory.CreateDirectory(path);
+
+                var sha256 = MD5.Create(); //utf8 here as well
+                var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(key.Key));
+                var result = Convert.ToBase64String(bytes);
+
+                foreach (var invalidFileNameChar in Path.GetInvalidFileNameChars())
+                {
+                    result = result.Replace(invalidFileNameChar.ToString(), string.Empty);
+                }
+                path = Path.Combine(path, result + ".png");
+                File.WriteAllBytes(path, texture.EncodeToPNG());
+            }
+        }
+
+        private List<RootObject> HideTopLevelObjects()
+        {
+            var roots = new List<RootObject>();
             var objects = GameObject.FindObjectsOfType<Transform>();
             foreach (var transform in objects)
             {
-                if (!roots.Contains(transform.root))
+                var found = false;
+                foreach (var root in roots)
                 {
-                    roots.Add(transform);
-                    Debug.Log(transform.name);
+                    if (root.transform.GetInstanceID() != transform.root.GetInstanceID())
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    roots.Add(new RootObject() { transform = transform, activeState = transform.gameObject.activeSelf });
+                    transform.gameObject.SetActive(false); // hide the game object temporarily
+                    // Debug.Log(transform.name);
                 }
             }
 
+            return roots;
+        }
 
-            var texture = new Texture2D(Screen.width, Screen.height, TextureFormat.ARGB32, true);
-            texture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
-            texture.Apply();
+        private void LoadPreviewGameObjects(string key, GameObject gameObject)
+        {
+            var objLoaderFactory = new ObjLoaderFactory();
+            var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
 
-            return new MeshPreviewTexture() { Texture = texture };
+            var fileStream = new FileStream(key, FileMode.Open);
+            var result = objLoader.Load(fileStream);
+
+            var mesh = new Mesh();
+            var normals = new Vector3[result.Vertices.Count];
+            var vertexes = new Vector3[result.Vertices.Count];
+            var uvs = new Vector2[result.Vertices.Count];
+
+            foreach (var meshGroup in result.Groups)
+            {
+                foreach (var face in meshGroup.Faces)
+                {
+                    for (var faceIndex = 0; faceIndex < face.Count; faceIndex++)
+                    {
+                        var faceInfo = face[faceIndex];
+                        var normal = result.Normals[faceInfo.NormalIndex - 1];
+                        var vertexIndex = faceInfo.VertexIndex - 1;
+                        var vertex = result.Vertices[vertexIndex];
+                        var uv = result.Textures[vertexIndex];
+                        normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
+                        vertexes[vertexIndex] = new Vector3(vertex.X, vertex.Y, vertex.Z);
+                        uvs[vertexIndex] = new Vector2(uv.X, uv.Y);
+                    }
+                }
+            }
+
+            mesh.vertices = vertexes;
+            mesh.uv = uvs;
+            mesh.normals = normals;
+
+            for (var i = 0; i < result.Groups.Count; i++)
+            {
+                var triangleGroup = result.Groups[i];
+                mesh.SetTriangles(triangleGroup.Faces.SelectMany(
+                    face =>
+                    {
+                        var indexes = new int[face.Count];
+                        for (var j = 0; j < face.Count; j++)
+                        {
+                            indexes[j] = face[j].VertexIndex - 1;
+                        }
+
+                        return indexes;
+                    }).ToArray(), i);
+            }
+
+            mesh.Optimize();
+            var filter = gameObject.AddComponent<MeshFilter>();
+            filter.mesh = mesh;
         }
 
         /// <summary>
@@ -59,10 +280,10 @@
         /// <param name="key">The id to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <returns>Returns true if the data can be read by this reader; otherwise false.</returns>
-        public bool CanRead(string key, ContentManager<string> content)
+        public bool CanRead(MeshPreviewTextureArgs key, ContentManager<MeshPreviewTextureArgs> content)
         {
-            var extension = Path.GetExtension(key);
-            return File.Exists(key) && extension == ".obj";
+            var extension = Path.GetExtension(key.Key);
+            return !string.IsNullOrEmpty(extension) && extension.ToLower() == ".obj";
         }
 
         /// <summary>
@@ -71,9 +292,41 @@
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        public void ReadAsync(string key, ContentManager<string> content, Action<object> completedCallback)
+        public void ReadAsync(MeshPreviewTextureArgs key, ContentManager<MeshPreviewTextureArgs> content, Action<ReadAsyncArgs<MeshPreviewTextureArgs, object>> completedCallback)
         {
-            UnityThreadHelper.Dispatcher.Dispatch(() => completedCallback(this.Read(key, content)));
+            throw new NotImplementedException();
+            //if (completedCallback == null)
+            //{
+            //    throw new ArgumentNullException("completedCallback");
+            //}
+
+            //var scheduler = CoroutineManager.Instance;
+            //scheduler.StartCoroutine(this.GetData(key, completedCallback));
         }
+
+        /*
+      /// <summary>
+      /// Gets the data from the 
+      /// </summary>
+      /// <param name="url">The url to be requested.</param>
+      /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
+      /// <returns>Returns a <see cref="IEnumerable"/> coroutine.</returns>
+      private IEnumerator GetData(MeshPreviewTextureArgs key, Action<ReadAsyncArgs<MeshPreviewTextureArgs, object>> completedCallback)
+      {
+          var result = Resources.Load<Texture2D>(key);
+
+#if USEOBJECTPOOLING
+          var args = ObjectPoolManager<ReadAsyncArgs<MeshPreviewTextureArgs, object>>.Instance.Pop();
+#else
+          var args = new ReadAsyncArgs<MeshPreviewTextureArgs, object>();
+#endif
+          args.Progress = 100;
+          args.State = ReadState.Completed;
+          args.Key = key;
+          args.Result = result;
+          completedCallback(args);
+          return null;
+      }
+      */
     }
 }

@@ -28,7 +28,7 @@ namespace Codefarts.ContentManager
         /// <param name="key">The id to be written to.</param>
         /// <param name="content">A reference to the content manager that invoked the write.</param>
         /// <returns>Returns a type representing the data.</returns>
-        object Write(T key, ContentManager<T> content);
+        void Write(T key, object data, ContentManager<T> content);
 
         /// <summary>
         /// Determines if the writer can write the data.
@@ -44,6 +44,6 @@ namespace Codefarts.ContentManager
         /// <param name="key">The id to be written to.</param>
         /// <param name="content">A reference to the content manager that invoked the write.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the write is complete.</param>
-        void WriteAsync(T key, ContentManager<T> content, Action<object> completedCallback);
+        void WriteAsync(T key, object data, ContentManager<T> content, Action completedCallback);
     }
 }

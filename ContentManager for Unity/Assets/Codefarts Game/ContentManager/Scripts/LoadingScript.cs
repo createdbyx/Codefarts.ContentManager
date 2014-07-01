@@ -50,25 +50,27 @@ namespace Codefarts.ContentManager.Scripts
         /// </summary>
         public void OnGUI()
         {
+            var key = new Uri("http://www.google.com");
             if (GUI.Button(new Rect(10, 10, 200, 25), "Load html asynchronously"))
             {
                 // asynchronously load google home page html markup
-                this.manager.Load<HtmlData>(new Uri("http://www.google.com"), this.SetupHtmlObject);
+                this.manager.Load<HtmlData>(key, this.SetupHtmlObject, false);
             }
 
             if (GUI.Button(new Rect(220, 10, 200, 25), "Load html synchronously"))
             {
                 // asynchronously load google home page html markup
-                this.SetupHtmlObject(this.manager.Load<HtmlData>(new Uri("http://www.google.com")));
+                this.SetupHtmlObject(new ReadAsyncArgs<Uri, HtmlData>() { Key = key, Progress = 100f, State = ReadState.Completed, Result = this.manager.Load<HtmlData>(key, false) });
             }
-            
+
             if (GUI.Button(new Rect(220, 45, 200, 25), "Reset"))
             {
                 if (this.googleTexture != null)
                 {
                     DestroyImmediate(this.googleTexture);
                 }
-                      
+
+                this.html = string.Empty;
                 this.htmlObject.guiText.text = string.Empty;
             }
 
@@ -76,12 +78,10 @@ namespace Codefarts.ContentManager.Scripts
             {
                 // asynchronously load google home page html markup
                 this.manager.Load<Texture2D>(
-                    new Uri("http://www.google.ca/images/srpr/logo4w.png"),
-                    data =>
-                    {
-                        this.googleTexture = data;
-                    });
-            }       
+                    new Uri("http://www.codefarts.com/Content/Images/Screenshots/GridMappingForUnity/Screenshot1.png"),
+                     data => this.SetupTextureHtmlObject(data),
+                     false);
+            }
 
             if (this.googleTexture != null)
             {
@@ -120,15 +120,42 @@ namespace Codefarts.ContentManager.Scripts
         /// <param name="data">
         /// The html data to setup.
         /// </param>
-        private void SetupHtmlObject(HtmlData data)
+        private void SetupHtmlObject(ReadAsyncArgs<Uri, HtmlData> data)
         {
-            this.html = string.IsNullOrEmpty(data.Markup) ? string.Empty : data.Markup.Substring(0, 50);
+            if (data.State != ReadState.Completed)
+            {
+                this.html = string.Format("Loading: {0}%", data.Progress);
+            }
+            else
+            {
+                this.html = string.IsNullOrEmpty(data.Result.Markup) ? string.Empty : data.Result.Markup.Substring(0, 50);
+            }
 
             var text = this.htmlObject.guiText == null ? this.htmlObject.AddComponent<GUIText>() : this.htmlObject.guiText;
             text.text = this.html;
             text.fontSize = 24;
             text.font = this.guiText.font;
             this.htmlObject.transform.position = new Vector3(0.1f, 0.8f, 0);
+        }
+
+        /// <summary>
+        /// Sets up the html game object.
+        /// </summary>
+        /// <param name="data">
+        /// The html data to setup.
+        /// </param>
+        private void SetupTextureHtmlObject(ReadAsyncArgs<Uri, Texture2D> data)
+        {
+            this.html = string.Format("Loading: {0}%  {1}", data.Progress, data.State);
+            var text = this.htmlObject.guiText == null ? this.htmlObject.AddComponent<GUIText>() : this.htmlObject.guiText;
+            text.text = this.html;
+            text.fontSize = 24;
+            text.font = this.guiText.font;
+            this.htmlObject.transform.position = new Vector3(0.1f, 0.8f, 0);
+            if (data.State == ReadState.Completed)
+            {
+                this.googleTexture = data.Result;
+            }
         }
     }
 }

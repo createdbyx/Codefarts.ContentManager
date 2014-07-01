@@ -22,7 +22,7 @@
     <OutputPath>Temp\UnityVS_bin\Debug\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DefineConstants>DEBUG;TRACE;UNITY_STANDALONE_WIN;ENABLE_MICROPHONE;ENABLE_TEXTUREID_MAP;ENABLE_AUDIO_FMOD;UNITY_STANDALONE;ENABLE_MONO;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_GENERICS;ENABLE_SUBSTANCE;INCLUDE_WP8SUPPORT;ENABLE_MOVIES;ENABLE_WWW;ENABLE_IMAGEEFFECTS;ENABLE_WEBCAM;INCLUDE_METROSUPPORT;RENDER_SOFTWARE_CURSOR;ENABLE_NETWORK;ENABLE_PHYSICS;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_2D_PHYSICS;ENABLE_SHADOWS;ENABLE_AUDIO;ENABLE_NAVMESH_CARVING;ENABLE_DUCK_TYPING;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;UNITY_4_3_4;UNITY_4_3;ENABLE_PROFILER;UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_TEAM_LICENSE;UNITY3D</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;UNITY_4_5_1;UNITY_4_5;UNITY_STANDALONE_WIN;ENABLE_MICROPHONE;ENABLE_TEXTUREID_MAP;ENABLE_UNITYEVENTS;ENABLE_NEW_HIERARCHY ;ENABLE_AUDIO_FMOD;UNITY_STANDALONE;ENABLE_MONO;ENABLE_TERRAIN;ENABLE_SUBSTANCE;ENABLE_GENERICS;INCLUDE_WP8SUPPORT;ENABLE_MOVIES;ENABLE_WWW;ENABLE_IMAGEEFFECTS;ENABLE_WEBCAM;INCLUDE_METROSUPPORT;RENDER_SOFTWARE_CURSOR;ENABLE_NETWORK;ENABLE_PHYSICS;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_2D_PHYSICS;ENABLE_SHADOWS;ENABLE_AUDIO;ENABLE_NAVMESH_CARVING;ENABLE_DUCK_TYPING;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;ENABLE_PROFILER;UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY3D</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,7 +30,7 @@
     <OutputPath>Temp\UnityVS_bin\Release\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DefineConstants>TRACE;UNITY_STANDALONE_WIN;ENABLE_MICROPHONE;ENABLE_TEXTUREID_MAP;ENABLE_AUDIO_FMOD;UNITY_STANDALONE;ENABLE_MONO;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_GENERICS;ENABLE_SUBSTANCE;INCLUDE_WP8SUPPORT;ENABLE_MOVIES;ENABLE_WWW;ENABLE_IMAGEEFFECTS;ENABLE_WEBCAM;INCLUDE_METROSUPPORT;RENDER_SOFTWARE_CURSOR;ENABLE_NETWORK;ENABLE_PHYSICS;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_2D_PHYSICS;ENABLE_SHADOWS;ENABLE_AUDIO;ENABLE_NAVMESH_CARVING;ENABLE_DUCK_TYPING;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;UNITY_4_3_4;UNITY_4_3;ENABLE_PROFILER;UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY_TEAM_LICENSE;UNITY3D</DefineConstants>
+    <DefineConstants>TRACE;UNITY_4_5_1;UNITY_4_5;UNITY_STANDALONE_WIN;ENABLE_MICROPHONE;ENABLE_TEXTUREID_MAP;ENABLE_UNITYEVENTS;ENABLE_NEW_HIERARCHY ;ENABLE_AUDIO_FMOD;UNITY_STANDALONE;ENABLE_MONO;ENABLE_TERRAIN;ENABLE_SUBSTANCE;ENABLE_GENERICS;INCLUDE_WP8SUPPORT;ENABLE_MOVIES;ENABLE_WWW;ENABLE_IMAGEEFFECTS;ENABLE_WEBCAM;INCLUDE_METROSUPPORT;RENDER_SOFTWARE_CURSOR;ENABLE_NETWORK;ENABLE_PHYSICS;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_2D_PHYSICS;ENABLE_SHADOWS;ENABLE_AUDIO;ENABLE_NAVMESH_CARVING;ENABLE_DUCK_TYPING;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;ENABLE_PROFILER;UNITY_EDITOR;UNITY_EDITOR_WIN;UNITY3D</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -52,34 +52,69 @@
     <Compile Include="Assets\Codefarts Game\ContentManager\Code\ExtensionMethods.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Code\IReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Code\IWriter.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\ObjFileReader\FaceIndices.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\ObjFileReader\GeometryBuffer.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\ObjFileReader\OBJ.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\ActionExtension.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\Channel.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\Dispatcher.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\EnumerableExtension.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\EnumeratorExtension.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\ObjectExtension.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\SwitchTo.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\Task.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\TaskDistributer.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\TaskExtension.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\Thread.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\UnityThreadHelper.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Code\Threading\WaitOneExtension.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Code\ReadAsyncArgs.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Code\ReadState.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\CaptureScreenShotLoader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\HtmlData.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\HtmlReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\MeshPreviewTexture.cs" />
-    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjImporter.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\MeshPreviewTextureArgs.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Common\StringExtensions.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\DataStore.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\IDataStore.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\IElementGroup.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\IFaceGroup.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\IGroupDataStore.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\IMaterialLibrary.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\INormalDataStore.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\ITextureDataStore.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\DataStore\IVertexDataStore.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\Elements\Face.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\Elements\Group.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\Material.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\Vec3.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\VertexData\Normal.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\VertexData\Texture.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Data\VertexData\Vertex.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\IMaterialLibraryLoader.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\IMaterialLibraryLoaderFacade.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\IObjLoader.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\IObjLoaderFactory.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\LoaderBase.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\LoadResult.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\MaterialLibraryLoader.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\MaterialLibraryLoaderFacade.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\MaterialStreamProvider.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\ObjLoader.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\Loaders\ObjLoaderFactory.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\FaceParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\GroupParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\IFaceParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\IGroupParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\IMaterialLibraryParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\INormalParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\ITextureParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\ITypeParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\IUseMaterialParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\Interfaces\IVertexParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\MaterialLibraryParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\NormalParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\TextureParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\TypeParserBase.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\UseMaterialParser.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjFileReader\TypeParsers\VertexParser.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjMeshPreviewTextureStringReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\ObjMeshStringReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\Texture2DResourceReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\Texture2DStringReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Code\Texture2DUriReader.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\CoroutineManager.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\ExtendedFlycam.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\HtmlDataUriLoadingScript.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\LoadingScript.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Texture2DResourceLoadingScript.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Texture2DStringLoadingScript.cs" />
+    <Compile Include="Assets\Codefarts Game\ContentManager\Scripts\Texture2DUriLoadingScript.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Localization\LocalizationHelpers.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Localization\LocalizationManager.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Settings\IValues.cs" />
