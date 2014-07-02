@@ -47,17 +47,19 @@ namespace Codefarts.ContentManager.Scripts
             var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
 
             var path = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
-            var fileStream = new FileStream(path, FileMode.Open);
-            var result = objLoader.Load(fileStream);
+            LoadResult result;
+            using (var fileStream = new FileStream(path, FileMode.Open))
+            {
+                result = objLoader.Load(fileStream);
+            }
 
-            var mesh = this.BuildMesh(result);
-            return mesh;
+            return this.BuildMesh(result);
         }
 
         private Mesh BuildMesh(LoadResult result)
         {
             var mesh = new Mesh();
-              var normals = new Vector3[result.Vertices.Count];
+            var normals = new Vector3[result.Vertices.Count];
             var vertexes = new Vector3[result.Vertices.Count];
             var uvs = new Vector2[result.Vertices.Count];
 

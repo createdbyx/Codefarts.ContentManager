@@ -350,7 +350,7 @@ namespace Codefarts.ContentManager
             if (this.Assets.ContainsKey(key))
             {
 #if USEOBJECTPOOLING
-            var args = ObjectPoolManager<ReadAsyncArgs<TKey, TReturnValue>>.Instance.Pop();
+                var args = ObjectPoolManager<ReadAsyncArgs<TKey, TReturnValue>>.Instance.Pop();
 #else
                 var args = new ReadAsyncArgs<TKey, TReturnValue>();
 #endif
@@ -427,7 +427,7 @@ namespace Codefarts.ContentManager
                 }
 
 #if USEOBJECTPOOLING
-            var args = ObjectPoolManager<ReadAsyncArgs<TKey, TReturnValue>>.Instance.Pop();
+                var args = ObjectPoolManager<ReadAsyncArgs<TKey, TReturnValue>>.Instance.Pop();
 #else
                 var args = new ReadAsyncArgs<TKey, TReturnValue>();
 #endif
