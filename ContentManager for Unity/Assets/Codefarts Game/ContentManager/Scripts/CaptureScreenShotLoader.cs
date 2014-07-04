@@ -21,7 +21,7 @@ namespace Codefarts.ContentManager.Scripts
 
         private bool isCapturingScreenShot;
 
-        private string modelPath = @"C:\Users\Dean\Documents\AeroFS\Unity\Codefarts.GridMapping\Assets\Codefarts Game\Grid Mapping\Resources\Codefarts.Unity\Source Meshes\InsideCornerBox2D.obj";
+        private string modelPath = @"C:\Users\Dean\Downloads\toruspro.obj";
 
         private bool isCapturingScreenShotAsync;
 
@@ -30,6 +30,8 @@ namespace Codefarts.ContentManager.Scripts
         public Material material;
 
         public Material previewMaterial;
+
+        private bool isLoadingAsync;
 
         public void OnPostRender()
         {
@@ -98,15 +100,35 @@ namespace Codefarts.ContentManager.Scripts
                 filter.sharedMesh = ContentManager<string>.Instance.Load<Mesh>(this.modelPath);
             }
 
-            if (this.isCapturingScreenShot)
+            if (GUI.Button(new Rect(140, 70, 128, 20), "Load Async"))
             {
-                GUI.Label(new Rect(10, 50, 256, 30), string.Format("Loading: {0}%", this.percentage));
+                this.isLoadingAsync = true;
+                ContentManager<string>.Instance.Load<Mesh>(this.modelPath, this.LoadCallback, false);
+            }
+
+            if (this.isCapturingScreenShot || this.isLoadingAsync)
+            {
+                GUI.Label(new Rect(275, 70, 256, 30), string.Format("Loading: {0}%", this.percentage));
             }
 
             if (this.screenshotTexture != null)
             {
                 GUI.DrawTexture(new Rect(16, 100, this.screenshotTexture.width, this.screenshotTexture.height), this.screenshotTexture);
             }
+        }
+
+        private void LoadCallback(ReadAsyncArgs<string, Mesh> args)
+        {
+           // UnityEngine.Debug.Log(string.Format("Percent: {0}", args.Progress));
+            if (args.State == ReadState.Completed)
+            {
+                var filter = this.meshObject.GetComponent<MeshFilter>();
+                filter.sharedMesh = args.Result;
+                this.isLoadingAsync = false;
+                return;
+            }
+
+            this.percentage = args.Progress;
         }
 
         /// <summary>

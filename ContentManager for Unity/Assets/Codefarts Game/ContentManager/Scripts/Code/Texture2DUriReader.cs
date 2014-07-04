@@ -94,7 +94,7 @@ namespace Codefarts.ContentManager.Scripts
         {
             var client = new WebClient();
 #if USEOBJECTPOOLING
-                    var args = ObjectPoolManager<ReadAsyncArgs<Uri, object>>.Instance.Pop();
+            var args = ObjectPoolManager<ReadAsyncArgs<Uri, object>>.Instance.Pop();
 #else
             var args = new ReadAsyncArgs<Uri, object>();
 #endif
@@ -130,7 +130,7 @@ namespace Codefarts.ContentManager.Scripts
             {
                 Debug.Log("Progress: " + args.Progress);
                 completedCallback(args);
-                yield return new WaitForFixedUpdate();
+                yield return new WaitForEndOfFrame();
             }
 
             // if no error try to load image

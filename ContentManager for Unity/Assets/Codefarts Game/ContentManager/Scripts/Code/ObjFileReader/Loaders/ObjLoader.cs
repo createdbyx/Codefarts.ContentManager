@@ -5,7 +5,9 @@ using ObjLoader.Loader.TypeParsers.Interfaces;
 
 namespace ObjLoader.Loader.Loaders
 {
+    using System;
     using System.Collections;
+    using System.Diagnostics;
 
     public class ObjLoader : LoaderBase, IObjLoader
     {
@@ -63,23 +65,30 @@ namespace ObjLoader.Loader.Loaders
             return CreateResult();
         }
 
-        public IEnumerator LoadAsync(Stream lineStream)
+        public void LoadAsync(Stream lineStream, Action<float, LoadResult> progress)
         {
-            yield return this.StartLoadAsync(lineStream);
+            if (progress == null)
+            {
+                throw new ArgumentNullException("progress");
+            }
 
-            yield return CreateResult();
+            this.StartLoadAsync(lineStream,
+              (p, completed) =>
+              {
+                  progress(p, completed ? CreateResult() : null);
+              });
         }
 
         private LoadResult CreateResult()
         {
             var result = new LoadResult
-                             {
-                                 Vertices = _dataStore.Vertices,
-                                 Textures = _dataStore.Textures,
-                                 Normals = _dataStore.Normals,
-                                 Groups = _dataStore.Groups,
-                                 Materials = _dataStore.Materials
-                             };
+                {
+                    Vertices = _dataStore.Vertices,
+                    Textures = _dataStore.Textures,
+                    Normals = _dataStore.Normals,
+                    Groups = _dataStore.Groups,
+                    Materials = _dataStore.Materials
+                };
             return result;
         }
     }

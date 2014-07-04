@@ -9,8 +9,10 @@ namespace Codefarts.ContentManager.Scripts
 {
     using System;
     using System.Collections;
+    using System.ComponentModel;
     using System.IO;
     using System.Linq;
+    using System.Threading;
 
     using ObjLoader.Loader.Loaders;
 
@@ -53,37 +55,61 @@ namespace Codefarts.ContentManager.Scripts
                 result = objLoader.Load(fileStream);
             }
 
-            return this.BuildMesh(result);
+            return this.BuildMesh(null, result, null, null);
         }
 
-        private Mesh BuildMesh(LoadResult result)
+        private IEnumerator BuildMesh(Action<Mesh> setMeshCallback, LoadResult result, ReadAsyncArgs<string, object> args, Action<ReadAsyncArgs<string, object>> completedCallback)
         {
             var mesh = new Mesh();
             var normals = new Vector3[result.Vertices.Count];
             var vertexes = new Vector3[result.Vertices.Count];
             var uvs = new Vector2[result.Vertices.Count];
 
-            foreach (var meshGroup in result.Groups)
+
+            for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
             {
-                foreach (var face in meshGroup.Faces)
+                var meshGroup = result.Groups[groupIndex];
+                for (var i = 0; i < meshGroup.Faces.Count; i++)
                 {
+                    var face = meshGroup.Faces[i];
                     for (var faceIndex = 0; faceIndex < face.Count; faceIndex++)
                     {
                         var faceInfo = face[faceIndex];
-                        var normal = result.Normals[faceInfo.NormalIndex - 1];
                         var vertexIndex = faceInfo.VertexIndex - 1;
                         var vertex = result.Vertices[vertexIndex];
-                        var uv = result.Textures[vertexIndex];
-                        normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
+                        var normal = result.Normals[faceInfo.NormalIndex - 1];
+                        var uv = result.Textures[faceInfo.TextureIndex - 1];
                         vertexes[vertexIndex] = new Vector3(vertex.X, vertex.Y, vertex.Z);
+                        normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
                         uvs[vertexIndex] = new Vector2(uv.X, uv.Y);
                     }
+
+                    //if (completedCallback != null)
+                    //{
+                    //    args.Progress = 66f + (((float)groupIndex / result.Groups.Count) + (((float)i / meshGroup.Faces.Count) * 33f));
+                    //    completedCallback(args);
+                    //    yield return new WaitForEndOfFrame();
+                    //}
+                }
+
+                if (completedCallback != null)
+                {
+                    args.Progress = 66f + ((((float)groupIndex / result.Groups.Count) * 33f));
+                    completedCallback(args);
+                    yield return new WaitForEndOfFrame();
                 }
             }
 
             mesh.vertices = vertexes;
-            mesh.uv = uvs;
-            mesh.normals = normals;
+            if (result.Textures != null && result.Textures.Count > 0)
+            {
+                mesh.uv = uvs;
+            }
+
+            if (result.Normals != null && result.Normals.Count > 0)
+            {
+                mesh.normals = normals;
+            }
 
             for (var i = 0; i < result.Groups.Count; i++)
             {
@@ -102,10 +128,17 @@ namespace Codefarts.ContentManager.Scripts
                             return indexes;
                         }).ToArray(),
                     i);
+
+                if (completedCallback != null)
+                {
+                    args.Progress = 99f + (((float)i / result.Groups.Count) * 0.1f);
+                    completedCallback(args);
+                    yield return new WaitForEndOfFrame();
+                }
             }
 
             mesh.Optimize();
-            return mesh;
+            setMeshCallback(mesh);
         }
 
         /// <summary>
@@ -157,8 +190,20 @@ namespace Codefarts.ContentManager.Scripts
             var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
 
             var path = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
+            LoadResult result = null;
+            var isLoading = true;
             var fileStream = new FileStream(path, FileMode.Open);
-            var result = objLoader.LoadAsync(fileStream);
+
+            var progress = 0f;
+            var callback = new Action<float, LoadResult>(
+                (p, value) =>
+                {
+                    isLoading = value == null;
+                    result = value;
+                    progress = p * 0.66f;
+                });
+
+            objLoader.LoadAsync(fileStream, callback);
 
 #if USEOBJECTPOOLING
             var args = ObjectPoolManager<ReadAsyncArgs<string, object>>.Instance.Pop();
@@ -166,27 +211,34 @@ namespace Codefarts.ContentManager.Scripts
             var args = new ReadAsyncArgs<string, object>();
 #endif
 
-            if (result.Current is LoadResult)
+            args.State = ReadState.Working;
+            args.Key = key;
+            while (isLoading)
             {
-                args.Progress = 100;
-                args.State = ReadState.Completed;
-                args.Key = key;
-                var mesh = this.BuildMesh((LoadResult)result.Current);
-                args.Result = mesh;
+                args.Progress = progress;
                 completedCallback(args);
-                yield return null;
+                yield return new WaitForEndOfFrame();
             }
 
-            if (result.Current is ValueType && result.Current is float)
+            Mesh mesh = null;
+            // while (this.BuildMesh(setMeshCallback, result, args, completedCallback))
+            // {
+            // args.Progress = progress;
+            // completedCallback(args);
+            //  yield return new WaitForEndOfFrame();
+            // }
+            var scheduler = CoroutineManager.Instance;
+            scheduler.StartCoroutine(this.BuildMesh(m => { mesh = m; }, result, args, completedCallback));
+            while (mesh == null)
             {
-                args.Progress = (float)result.Current * 100f;
-                args.State = ReadState.Working;
-                args.Key = key;
-                args.Result = null;
-                completedCallback(args);
+                yield return new WaitForEndOfFrame();
             }
 
-            yield return result.Current;
+            //            var mesh = this.BuildMesh(result, args, completedCallback);
+            args.Progress = 100;
+            args.State = ReadState.Completed;
+            args.Result = mesh;
+            completedCallback(args);
         }
     }
 }
