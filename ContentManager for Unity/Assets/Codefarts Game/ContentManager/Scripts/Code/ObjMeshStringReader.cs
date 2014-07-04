@@ -9,10 +9,7 @@ namespace Codefarts.ContentManager.Scripts
 {
     using System;
     using System.Collections;
-    using System.ComponentModel;
     using System.IO;
-    using System.Linq;
-    using System.Threading;
 
     using ObjLoader.Loader.Loaders;
 
@@ -104,27 +101,27 @@ namespace Codefarts.ContentManager.Scripts
                 mesh.normals = normals;
             }
 
-            for (var i = 0; i < result.Groups.Count; i++)
+            for (var subMeshIndex = 0; subMeshIndex < result.Groups.Count; subMeshIndex++)
             {
-                var triangleGroup = result.Groups[i];
+                var triangleGroup = result.Groups[subMeshIndex];
 
-                mesh.SetTriangles(
-                    triangleGroup.Faces.SelectMany(
-                        face =>
-                        {
-                            var indexes = new int[face.Count];
-                            for (var j = 0; j < face.Count; j++)
-                            {
-                                indexes[j] = face[j].VertexIndex - 1;
-                            }
+                var indexes = new int[0];
+                for (var faceIndex = 0; faceIndex < triangleGroup.Faces.Count; faceIndex++)
+                {
+                    var face = triangleGroup.Faces[faceIndex];
+                    var startIndex = indexes.Length;
+                    Array.Resize(ref indexes, indexes.Length + face.Count);
+                    for (var i = 0; i < face.Count; i++)
+                    {
+                        indexes[startIndex + i] = face[i].VertexIndex - 1;
+                    }
+                }
 
-                            return indexes;
-                        }).ToArray(),
-                    i);
+                mesh.SetTriangles(indexes, subMeshIndex);  
 
                 if (completedCallback != null)
                 {
-                    args.Progress = 99f + (((float)i / result.Groups.Count) * 0.1f);
+                    args.Progress = 99f + (((float)subMeshIndex / result.Groups.Count) * 0.1f);
                     completedCallback(args);
                     yield return new WaitForEndOfFrame();
                 }
