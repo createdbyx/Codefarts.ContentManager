@@ -119,7 +119,6 @@ namespace Codefarts.ContentManager.Scripts
 
         private void LoadCallback(ReadAsyncArgs<string, Mesh> args)
         {
-           // UnityEngine.Debug.Log(string.Format("Percent: {0}", args.Progress));
             if (args.State == ReadState.Completed)
             {
                 var filter = this.meshObject.GetComponent<MeshFilter>();

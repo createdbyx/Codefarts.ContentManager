@@ -83,13 +83,6 @@ namespace Codefarts.ContentManager.Scripts
                         normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
                         uvs[vertexIndex] = new Vector2(uv.X, uv.Y);
                     }
-
-                    //if (completedCallback != null)
-                    //{
-                    //    args.Progress = 66f + (((float)groupIndex / result.Groups.Count) + (((float)i / meshGroup.Faces.Count) * 33f));
-                    //    completedCallback(args);
-                    //    yield return new WaitForEndOfFrame();
-                    //}
                 }
 
                 if (completedCallback != null)
@@ -221,12 +214,6 @@ namespace Codefarts.ContentManager.Scripts
             }
 
             Mesh mesh = null;
-            // while (this.BuildMesh(setMeshCallback, result, args, completedCallback))
-            // {
-            // args.Progress = progress;
-            // completedCallback(args);
-            //  yield return new WaitForEndOfFrame();
-            // }
             var scheduler = CoroutineManager.Instance;
             scheduler.StartCoroutine(this.BuildMesh(m => { mesh = m; }, result, args, completedCallback));
             while (mesh == null)
@@ -234,7 +221,6 @@ namespace Codefarts.ContentManager.Scripts
                 yield return new WaitForEndOfFrame();
             }
 
-            //            var mesh = this.BuildMesh(result, args, completedCallback);
             args.Progress = 100;
             args.State = ReadState.Completed;
             args.Result = mesh;

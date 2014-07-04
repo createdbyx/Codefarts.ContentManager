@@ -30,7 +30,6 @@ namespace ObjLoader.Loader.Loaders
             ThreadPool.QueueUserWorkItem(
                 (state) =>
                 {
-                  //  Debug.Log("length: " + lineStream.Length);
                     using (var reader = new StreamReader((Stream)state))
                     {
                         try
@@ -41,8 +40,6 @@ namespace ObjLoader.Loader.Loaders
                             {
                                 dataLength += ParseLine(reader);
                                 progress((((float)dataLength / lineStream.Length) * 100), false);
-                               // Debug.Log("per%: " + (((float)dataLength / lineStream.Length) * 100));
-                           //     Debug.Log("read: " + dataLength);
                             }
 
                             progress(99, true);
