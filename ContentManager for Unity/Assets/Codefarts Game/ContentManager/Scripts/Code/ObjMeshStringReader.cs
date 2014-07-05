@@ -52,7 +52,68 @@ namespace Codefarts.ContentManager.Scripts
                 result = objLoader.Load(fileStream);
             }
 
-            return this.BuildMesh(null, result, null, null);
+            return this.BuildMesh(result); ;
+        }
+
+        private Mesh BuildMesh(LoadResult result)
+        {
+            var mesh = new Mesh();
+            var normals = new Vector3[result.Vertices.Count];
+            var vertexes = new Vector3[result.Vertices.Count];
+            var uvs = new Vector2[result.Vertices.Count];
+
+            for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
+            {
+                var meshGroup = result.Groups[groupIndex];
+                for (var i = 0; i < meshGroup.Faces.Count; i++)
+                {
+                    var face = meshGroup.Faces[i];
+                    for (var faceIndex = 0; faceIndex < face.Count; faceIndex++)
+                    {
+                        var faceInfo = face[faceIndex];
+                        var vertexIndex = faceInfo.VertexIndex - 1;
+                        var vertex = result.Vertices[vertexIndex];
+                        var normal = result.Normals[faceInfo.NormalIndex - 1];
+                        var uv = result.Textures[faceInfo.TextureIndex - 1];
+                        vertexes[vertexIndex] = new Vector3(vertex.X, vertex.Y, vertex.Z);
+                        normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
+                        uvs[vertexIndex] = new Vector2(uv.X, uv.Y);
+                    }
+                }
+            }
+
+            mesh.vertices = vertexes;
+            if (result.Textures != null && result.Textures.Count > 0)
+            {
+                mesh.uv = uvs;
+            }
+
+            if (result.Normals != null && result.Normals.Count > 0)
+            {
+                mesh.normals = normals;
+            }
+
+            for (var subMeshIndex = 0; subMeshIndex < result.Groups.Count; subMeshIndex++)
+            {
+                var triangleGroup = result.Groups[subMeshIndex];
+
+                var indexes = new int[0];
+                for (var faceIndex = 0; faceIndex < triangleGroup.Faces.Count; faceIndex++)
+                {
+                    var face = triangleGroup.Faces[faceIndex];
+                    var startIndex = indexes.Length;
+                    Array.Resize(ref indexes, indexes.Length + face.Count);
+                    for (var i = 0; i < face.Count; i++)
+                    {
+                        indexes[startIndex + i] = face[i].VertexIndex - 1;
+                    }
+                }
+
+                mesh.SetTriangles(indexes, subMeshIndex);
+            }
+
+            mesh.Optimize();
+            return mesh;
         }
 
         private IEnumerator BuildMesh(Action<Mesh> setMeshCallback, LoadResult result, ReadAsyncArgs<string, object> args, Action<ReadAsyncArgs<string, object>> completedCallback)
@@ -61,7 +122,6 @@ namespace Codefarts.ContentManager.Scripts
             var normals = new Vector3[result.Vertices.Count];
             var vertexes = new Vector3[result.Vertices.Count];
             var uvs = new Vector2[result.Vertices.Count];
-
 
             for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
             {
@@ -117,7 +177,7 @@ namespace Codefarts.ContentManager.Scripts
                     }
                 }
 
-                mesh.SetTriangles(indexes, subMeshIndex);  
+                mesh.SetTriangles(indexes, subMeshIndex);
 
                 if (completedCallback != null)
                 {
@@ -128,7 +188,10 @@ namespace Codefarts.ContentManager.Scripts
             }
 
             mesh.Optimize();
-            setMeshCallback(mesh);
+            if (setMeshCallback != null)
+            {
+                setMeshCallback(mesh);
+            }
         }
 
         /// <summary>
