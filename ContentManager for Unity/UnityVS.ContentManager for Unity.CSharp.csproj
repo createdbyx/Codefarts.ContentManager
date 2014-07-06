@@ -48,6 +48,12 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="UnityVS.ContentManager for Unity.CSharp.Plugins.csproj">
+      <Project>{843F97DF-2485-4CA3-C21D-FE0E8FB07215}</Project>
+      <Name>UnityVS.ContentManager for Unity.CSharp.Plugins</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Assets\Codefarts Game\ContentManager\Code\ContentManager.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Code\ExtensionMethods.cs" />
     <Compile Include="Assets\Codefarts Game\ContentManager\Code\IReader.cs" />
@@ -125,8 +131,16 @@
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Settings\XML\EqualityComparerCallback.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Settings\XML\XmlDocumentLinqValues.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Settings\XML\XmlDocumentSettingsHelpers.cs" />
+    <Compile Include="Assets\iTweenEditor\Examples\StartAndStopTween.cs" />
+    <Compile Include="Assets\iTweenEditor\Helper Classes\EventParamMappings.cs" />
+    <Compile Include="Assets\iTweenEditor\Helper Classes\Vector3OrTransform.cs" />
+    <Compile Include="Assets\iTweenEditor\Helper Classes\Vector3OrTransformArray.cs" />
+    <Compile Include="Assets\iTweenEditor\iTween.cs" />
+    <Compile Include="Assets\iTweenEditor\iTweenEvent.cs" />
+    <Compile Include="Assets\iTweenEditor\iTweenPath.cs" />
     <None Include="Assets\Codefarts Game\ContentManager\Resources\Codefarts.Unity\Localization\en-us.txt" />
     <None Include="Assets\Codefarts Game\CoreProjectCode\Editor\Resources\Codefarts.Unity\Localization\en-us.txt" />
+    <None Include="Assets\iTweenEditor\README.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2013\UnityVS.CSharp.targets" />
 </Project>

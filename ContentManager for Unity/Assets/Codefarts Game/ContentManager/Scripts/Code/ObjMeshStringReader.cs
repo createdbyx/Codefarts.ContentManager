@@ -52,76 +52,36 @@ namespace Codefarts.ContentManager.Scripts
                 result = objLoader.Load(fileStream);
             }
 
-            return this.BuildMesh(result); ;
-        }
-
-        private Mesh BuildMesh(LoadResult result)
-        {
             var mesh = new Mesh();
-            var normals = new Vector3[result.Vertices.Count];
-            var vertexes = new Vector3[result.Vertices.Count];
-            var uvs = new Vector2[result.Vertices.Count];
-
-            for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
-            {
-                var meshGroup = result.Groups[groupIndex];
-                for (var i = 0; i < meshGroup.Faces.Count; i++)
-                {
-                    var face = meshGroup.Faces[i];
-                    for (var faceIndex = 0; faceIndex < face.Count; faceIndex++)
-                    {
-                        var faceInfo = face[faceIndex];
-                        var vertexIndex = faceInfo.VertexIndex - 1;
-                        var vertex = result.Vertices[vertexIndex];
-                        var normal = result.Normals[faceInfo.NormalIndex - 1];
-                        var uv = result.Textures[faceInfo.TextureIndex - 1];
-                        vertexes[vertexIndex] = new Vector3(vertex.X, vertex.Y, vertex.Z);
-                        normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
-                        uvs[vertexIndex] = new Vector2(uv.X, uv.Y);
-                    }
-                }
-            }
-
+            Vector3[] vertexes;
+            Vector3[] normals;
+            Vector2[] uvs;
+            FaceGroup[] faces;
+            this.BuildMesh(result, out vertexes, out normals, out uvs, out faces, null, null);
             mesh.vertices = vertexes;
-            if (result.Textures != null && result.Textures.Count > 0)
+            mesh.uv = uvs;
+            mesh.normals = normals;
+
+            for (var i = 0; i < faces.Length; i++)
             {
-                mesh.uv = uvs;
-            }
-
-            if (result.Normals != null && result.Normals.Count > 0)
-            {
-                mesh.normals = normals;
-            }
-
-            for (var subMeshIndex = 0; subMeshIndex < result.Groups.Count; subMeshIndex++)
-            {
-                var triangleGroup = result.Groups[subMeshIndex];
-
-                var indexes = new int[0];
-                for (var faceIndex = 0; faceIndex < triangleGroup.Faces.Count; faceIndex++)
-                {
-                    var face = triangleGroup.Faces[faceIndex];
-                    var startIndex = indexes.Length;
-                    Array.Resize(ref indexes, indexes.Length + face.Count);
-                    for (var i = 0; i < face.Count; i++)
-                    {
-                        indexes[startIndex + i] = face[i].VertexIndex - 1;
-                    }
-                }
-
-                mesh.SetTriangles(indexes, subMeshIndex);
+                mesh.SetTriangles(faces[0].indexes, i);
             }
 
             mesh.Optimize();
             return mesh;
         }
 
-        private IEnumerator BuildMesh(Action<Mesh> setMeshCallback, LoadResult result, ReadAsyncArgs<string, object> args, Action<ReadAsyncArgs<string, object>> completedCallback)
+        private struct FaceGroup
         {
-            var mesh = new Mesh();
-            var normals = new Vector3[result.Vertices.Count];
-            var vertexes = new Vector3[result.Vertices.Count];
-            var uvs = new Vector2[result.Vertices.Count];
+            public int[] indexes;
+        }
+
+        private void BuildMesh(LoadResult result, out Vector3[] vertexes, out Vector3[] normals, out Vector2[] uvs, out FaceGroup[] meshFaces, ReadAsyncArgs<string, object> args, Action<ReadAsyncArgs<string, object>> completedCallback)
+        {
+            //  var mesh = new Mesh();
+            normals = new Vector3[result.Vertices.Count];
+            vertexes = new Vector3[result.Vertices.Count];
+            uvs = new Vector2[result.Vertices.Count];
 
             for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
             {
@@ -146,20 +106,21 @@ namespace Codefarts.ContentManager.Scripts
                 {
                     args.Progress = 66f + ((((float)groupIndex / result.Groups.Count) * 33f));
                     completedCallback(args);
-                    yield return new WaitForEndOfFrame();
                 }
             }
 
-            mesh.vertices = vertexes;
-            if (result.Textures != null && result.Textures.Count > 0)
-            {
-                mesh.uv = uvs;
-            }
+            //mesh.vertices = vertexes;
+            //if (result.Textures != null && result.Textures.Count > 0)
+            //{
+            //    mesh.uv = uvs;
+            //}
 
-            if (result.Normals != null && result.Normals.Count > 0)
-            {
-                mesh.normals = normals;
-            }
+            //if (result.Normals != null && result.Normals.Count > 0)
+            //{
+            //    mesh.normals = normals;
+            //}
+
+            meshFaces = new FaceGroup[result.Groups.Count];
 
             for (var subMeshIndex = 0; subMeshIndex < result.Groups.Count; subMeshIndex++)
             {
@@ -177,22 +138,98 @@ namespace Codefarts.ContentManager.Scripts
                     }
                 }
 
-                mesh.SetTriangles(indexes, subMeshIndex);
+                meshFaces[subMeshIndex].indexes = indexes;
+                //mesh.SetTriangles(indexes, subMeshIndex);
 
                 if (completedCallback != null)
                 {
                     args.Progress = 99f + (((float)subMeshIndex / result.Groups.Count) * 0.1f);
                     completedCallback(args);
-                    yield return new WaitForEndOfFrame();
+                    //   yield return new WaitForEndOfFrame();
                 }
             }
 
-            mesh.Optimize();
-            if (setMeshCallback != null)
-            {
-                setMeshCallback(mesh);
-            }
+            //mesh.Optimize();
+            //return mesh;
         }
+
+        /*  private IEnumerator BuildMesh(Action<Mesh> setMeshCallback, LoadResult result, ReadAsyncArgs<string, object> args, Action<ReadAsyncArgs<string, object>> completedCallback)
+          {
+              var mesh = new Mesh();
+              var normals = new Vector3[result.Vertices.Count];
+              var vertexes = new Vector3[result.Vertices.Count];
+              var uvs = new Vector2[result.Vertices.Count];
+
+              for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
+              {
+                  var meshGroup = result.Groups[groupIndex];
+                  for (var i = 0; i < meshGroup.Faces.Count; i++)
+                  {
+                      var face = meshGroup.Faces[i];
+                      for (var faceIndex = 0; faceIndex < face.Count; faceIndex++)
+                      {
+                          var faceInfo = face[faceIndex];
+                          var vertexIndex = faceInfo.VertexIndex - 1;
+                          var vertex = result.Vertices[vertexIndex];
+                          var normal = result.Normals[faceInfo.NormalIndex - 1];
+                          var uv = result.Textures[faceInfo.TextureIndex - 1];
+                          vertexes[vertexIndex] = new Vector3(vertex.X, vertex.Y, vertex.Z);
+                          normals[vertexIndex] = new Vector3(normal.X, normal.Y, normal.Z);
+                          uvs[vertexIndex] = new Vector2(uv.X, uv.Y);
+                      }
+                  }
+
+                  if (completedCallback != null)
+                  {
+                      args.Progress = 66f + ((((float)groupIndex / result.Groups.Count) * 33f));
+                      completedCallback(args);
+                      //  yield return new WaitForEndOfFrame();
+                  }
+              }
+
+              mesh.vertices = vertexes;
+              if (result.Textures != null && result.Textures.Count > 0)
+              {
+                  mesh.uv = uvs;
+              }
+
+              if (result.Normals != null && result.Normals.Count > 0)
+              {
+                  mesh.normals = normals;
+              }
+
+              for (var subMeshIndex = 0; subMeshIndex < result.Groups.Count; subMeshIndex++)
+              {
+                  var triangleGroup = result.Groups[subMeshIndex];
+
+                  var indexes = new int[0];
+                  for (var faceIndex = 0; faceIndex < triangleGroup.Faces.Count; faceIndex++)
+                  {
+                      var face = triangleGroup.Faces[faceIndex];
+                      var startIndex = indexes.Length;
+                      Array.Resize(ref indexes, indexes.Length + face.Count);
+                      for (var i = 0; i < face.Count; i++)
+                      {
+                          indexes[startIndex + i] = face[i].VertexIndex - 1;
+                      }
+                  }
+
+                  mesh.SetTriangles(indexes, subMeshIndex);
+
+                  if (completedCallback != null)
+                  {
+                      args.Progress = 99f + (((float)subMeshIndex / result.Groups.Count) * 0.1f);
+                      completedCallback(args);
+                      //   yield return new WaitForEndOfFrame();
+                  }
+              }
+
+              mesh.Optimize();
+              if (setMeshCallback != null)
+              {
+                  setMeshCallback(mesh);
+              }
+          }                 */
 
         /// <summary>
         /// Determines if the reader can read the data.
@@ -225,66 +262,146 @@ namespace Codefarts.ContentManager.Scripts
                 throw new ArgumentNullException("completedCallback");
             }
 
-            var scheduler = CoroutineManager.Instance;
-            scheduler.StartCoroutine(this.GetData(key, content, completedCallback));
-        }
-
-        /// <summary>
-        /// Gets the data from the 
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="callback"></param>
-        /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        /// <param name="url">The url to be requested.</param>
-        /// <returns>Returns a <see cref="IEnumerable"/> coroutine.</returns>
-        private IEnumerator GetData(string key, ContentManager<string> content, Action<ReadAsyncArgs<string, object>> completedCallback)
-        {
-            var objLoaderFactory = new ObjLoaderFactory();
-            var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
-
-            var path = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
-            LoadResult result = null;
             var isLoading = true;
-            var fileStream = new FileStream(path, FileMode.Open);
-
             var progress = 0f;
-            var callback = new Action<float, LoadResult>(
-                (p, value) =>
+            Loom.RunAsync(
+                () =>
                 {
-                    isLoading = value == null;
-                    result = value;
-                    progress = p * 0.66f;
-                });
+                    var objLoaderFactory = new ObjLoaderFactory();
+                    var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
 
-            objLoader.LoadAsync(fileStream, callback);
+                    var path = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
+                    LoadResult result = null;
+                    var fileStream = new FileStream(path, FileMode.Open);
+
+                    var callback = new Action<float, LoadResult>(
+                        (p, value) =>
+                        {
+                            isLoading = value == null;
+                            result = value;
+                            progress = p * 0.66f;
+                        });
+
+                    objLoader.LoadAsync(fileStream, callback);
 
 #if USEOBJECTPOOLING
-            var args = ObjectPoolManager<ReadAsyncArgs<string, object>>.Instance.Pop();
+                    var args = ObjectPoolManager<ReadAsyncArgs<string, object>>.Instance.Pop();
 #else
-            var args = new ReadAsyncArgs<string, object>();
+                    var args = new ReadAsyncArgs<string, object>();
 #endif
 
-            args.State = ReadState.Working;
-            args.Key = key;
-            while (isLoading)
-            {
-                args.Progress = progress;
-                completedCallback(args);
-                yield return new WaitForEndOfFrame();
-            }
+                    args.State = ReadState.Working;
+                    args.Key = key;
+                    while (isLoading)
+                    {
+                        args.Progress = progress;
+                        Loom.QueueOnMainThread(
+                            () =>
+                            {
+                                completedCallback(args);
+                            });
+                    }
 
-            Mesh mesh = null;
-            var scheduler = CoroutineManager.Instance;
-            scheduler.StartCoroutine(this.BuildMesh(m => { mesh = m; }, result, args, completedCallback));
-            while (mesh == null)
-            {
-                yield return new WaitForEndOfFrame();
-            }
 
-            args.Progress = 100;
-            args.State = ReadState.Completed;
-            args.Result = mesh;
-            completedCallback(args);
+                    Vector3[] vertexes;
+                    Vector3[] normals;
+                    Vector2[] uvs;
+                    FaceGroup[] faces;
+                    this.BuildMesh(result, out vertexes, out normals, out uvs, out faces, args,
+                        e =>
+                        {
+                            Loom.QueueOnMainThread(
+                                () =>
+                                {
+                                    completedCallback(args);
+                                });
+                        });
+
+                    Loom.QueueOnMainThread(
+                        () =>
+                        {
+                            var mesh = new Mesh();
+                            mesh.vertices = vertexes;
+                            mesh.uv = uvs;
+                            mesh.normals = normals;
+
+                            for (var i = 0; i < faces.Length; i++)
+                            {
+                                mesh.SetTriangles(faces[0].indexes, i);
+                            }
+
+                            mesh.Optimize();
+
+                            args.Progress = 100;
+                            args.State = ReadState.Completed;
+                            args.Result = mesh;
+
+                            completedCallback(args);
+                        });
+                });
+
+
+
+            //var scheduler = CoroutineManager.Instance;
+            //scheduler.StartCoroutine(this.GetData(key, content, completedCallback));
         }
+
+        /*   /// <summary>
+           /// Gets the data from the 
+           /// </summary>
+           /// <param name="key"></param>
+           /// <param name="callback"></param>
+           /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
+           /// <param name="url">The url to be requested.</param>
+           /// <returns>Returns a <see cref="IEnumerable"/> coroutine.</returns>
+           private IEnumerator GetData(string key, ContentManager<string> content, Action<ReadAsyncArgs<string, object>> completedCallback)
+           {
+               var objLoaderFactory = new ObjLoaderFactory();
+               var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
+
+               var path = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
+               LoadResult result = null;
+               var isLoading = true;
+               var fileStream = new FileStream(path, FileMode.Open);
+
+               var progress = 0f;
+               var callback = new Action<float, LoadResult>(
+                   (p, value) =>
+                   {
+                       isLoading = value == null;
+                       result = value;
+                       progress = p * 0.66f;
+                   });
+
+               objLoader.LoadAsync(fileStream, callback);
+
+   #if USEOBJECTPOOLING
+               var args = ObjectPoolManager<ReadAsyncArgs<string, object>>.Instance.Pop();
+   #else
+               var args = new ReadAsyncArgs<string, object>();
+   #endif
+
+               args.State = ReadState.Working;
+               args.Key = key;
+               while (isLoading)
+               {
+                   args.Progress = progress;
+                   completedCallback(args);
+                   yield return new WaitForEndOfFrame();
+               }
+
+               Mesh mesh = null;
+               var scheduler = CoroutineManager.Instance;
+               scheduler.StartCoroutine(this.BuildMesh(m => { mesh = m; }, result, args, completedCallback));
+               while (mesh == null)
+               {
+                   yield return new WaitForEndOfFrame();
+               }
+
+               args.Progress = 100;
+               args.State = ReadState.Completed;
+               args.Result = mesh;
+               completedCallback(args);
+           }                      */
     }
 }

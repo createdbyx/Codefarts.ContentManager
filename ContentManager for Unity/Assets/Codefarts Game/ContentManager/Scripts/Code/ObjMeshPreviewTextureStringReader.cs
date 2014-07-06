@@ -14,6 +14,7 @@ namespace Codefarts.ContentManager.Scripts
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Threading;
 
     using Codefarts.ContentManager.Scripts.Code;
 
@@ -32,11 +33,44 @@ namespace Codefarts.ContentManager.Scripts
     /// </summary>
     public class ObjMeshPreviewTextureStringReader : IReader<MeshPreviewTextureArgs>
     {
+        private class AsyncBehavior : MonoBehaviour
+        {
+            private List<Action> callbacks = new List<Action>();
+            private List<Action> currentCallbacks = new List<Action>();
+
+            public void AddPostRenderCallback(Action action)
+            {
+                this.callbacks.Add(action);
+                this.gameObject.SetActive(true);
+            }
+
+            public void OnPostRender()
+            {
+                Debug.Log("AsyncBehavior_postrender: " + callbacks.Count);
+                lock (callbacks)
+                {
+                    currentCallbacks.Clear();
+                    currentCallbacks.AddRange(callbacks);
+                    callbacks.Clear();
+                }
+
+                foreach (var callback in this.currentCallbacks)
+                {
+                    callback();
+                }
+
+                this.gameObject.SetActive(false);
+            }
+        }
+
         private struct RootObject
         {
             public Transform transform;
             public bool activeState;
         }
+
+        private AsyncBehavior asyncObject;
+        private Camera camera;
 
         /// <summary>
         /// Gets the <see cref="IReader{T}.Type"/> that this reader implementation returns.
@@ -57,7 +91,9 @@ namespace Codefarts.ContentManager.Scripts
         /// <returns>Returns a type representing the data.</returns>
         public object Read(MeshPreviewTextureArgs key, ContentManager<MeshPreviewTextureArgs> content)
         {
-            var meshPreviewTexture = this.DoLoadCache(key);
+            this.CreateGameObject();
+
+            var meshPreviewTexture = this.DoLoadCache(key, false);
             if (meshPreviewTexture != null)
             {
                 return meshPreviewTexture;
@@ -66,23 +102,28 @@ namespace Codefarts.ContentManager.Scripts
             // hide and disable all top level objects
             var roots = this.HideTopLevelObjects();
 
-            GameObject cameraObject;
-            Camera camera;
-            var previewObject = this.DoSetupObjects(key, content, out cameraObject, out camera);
+            var previewObject = this.DoSetupObjects(key, content);
 
             // TODO: Hide mesh renderes before rendering to prevent any other scene data from being rendered along with preview
+
+            // generate a preview texture
+            var texture = new Texture2D(key.Width, key.Height, TextureFormat.ARGB32, true);
+            this.asyncObject.AddPostRenderCallback(
+                   () =>
+                   {
+                       // generate a preview texture
+                       texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
+                       texture.Apply();
+                   });
 
             // we need to manually render one frame with the camera here
             camera.Render();
 
-            // generate a preview texture
-            var texture = new Texture2D(key.Width, key.Height, TextureFormat.ARGB32, true);
-            texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
-            texture.Apply();
-                                                                                        
+            //texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
+            //texture.Apply();
+
             // destroy preview objects
             Object.DestroyImmediate(previewObject);
-            Object.DestroyImmediate(cameraObject);
 
             this.DoRestoreScene(roots);
 
@@ -91,7 +132,7 @@ namespace Codefarts.ContentManager.Scripts
             return new MeshPreviewTexture() { Texture = texture };
         }
 
-        private MeshPreviewTexture DoLoadCache(MeshPreviewTextureArgs key)
+        private MeshPreviewTexture DoLoadCache(MeshPreviewTextureArgs key, bool async)
         {
             if (!key.LoadFromCache)
             {
@@ -116,7 +157,20 @@ namespace Codefarts.ContentManager.Scripts
                 return null;
             }
 
-            var texture = new Texture2D(4, 4, TextureFormat.ARGB32, true);
+            Texture2D texture = null;
+            if (async)
+            {
+                Loom.QueueOnMainThread(
+                    () =>
+                    {
+                        texture = new Texture2D(4, 4, TextureFormat.ARGB32, true);
+                    });
+            }
+            else
+            {
+                texture = new Texture2D(4, 4, TextureFormat.ARGB32, true);
+            }
+
             if (texture.LoadImage(File.ReadAllBytes(path)))
             {
                 return new MeshPreviewTexture() { Texture = texture };
@@ -135,7 +189,7 @@ namespace Codefarts.ContentManager.Scripts
             }
         }
 
-        private GameObject DoSetupObjects(MeshPreviewTextureArgs key, ContentManager<MeshPreviewTextureArgs> content, out GameObject cameraObject, out Camera camera)
+        private GameObject DoSetupObjects(MeshPreviewTextureArgs key, ContentManager<MeshPreviewTextureArgs> content)
         {
             // load object
             var previewObject = new GameObject("PreviewMesh");
@@ -146,8 +200,8 @@ namespace Codefarts.ContentManager.Scripts
             previewObject.renderer.material = key.Material == null ? new Material(Shader.Find("Diffuse")) : key.Material;
 
             // setup preview camera
-            cameraObject = new GameObject("PreviewCamera");
-            camera = cameraObject.AddComponent<Camera>();
+            //cameraObject = new GameObject("PreviewCamera");
+            // camera = cameraObject.AddComponent<Camera>();
             camera.backgroundColor = key.BackgroundColor;
             camera.clearFlags = CameraClearFlags.SolidColor;
 
@@ -186,6 +240,7 @@ namespace Codefarts.ContentManager.Scripts
                 {
                     result = result.Replace(invalidFileNameChar.ToString(), string.Empty);
                 }
+
                 path = Path.Combine(path, result + ".png");
                 File.WriteAllBytes(path, texture.EncodeToPNG());
             }
@@ -304,8 +359,146 @@ namespace Codefarts.ContentManager.Scripts
                 throw new ArgumentNullException("completedCallback");
             }
 
+            this.CreateGameObject();
+
+            /*
+             Loom.RunAsync(
+               () =>
+               {
+ #if USEOBJECTPOOLING
+                   var args = ObjectPoolManager<ReadAsyncArgs<MeshPreviewTextureArgs, object>>.Instance.Pop();
+ #else
+                   var args = new ReadAsyncArgs<MeshPreviewTextureArgs, object>();
+ #endif
+
+                   Texture2D texture = null;
+                   Debug.Log("loading cache");
+
+                   var meshPreviewTexture = this.DoLoadCache(key, true);
+                   if (meshPreviewTexture != null)
+                   {
+                       texture = meshPreviewTexture.Texture;
+                       //args.Progress = 100;
+                       //args.State = ReadState.Completed;
+                       //args.Key = key;
+                       //args.Result = meshPreviewTexture;
+                       //completedCallback(args);
+                       //return;
+                   }
+                   else
+                   {
+                       Debug.Log("hiding existing scene");
+
+                       // hide and disable all top level objects
+                       List<RootObject> roots = null;
+                       var waitingProcess = true;
+                       Loom.QueueOnMainThread(
+                           () =>
+                           {
+                               roots = this.HideTopLevelObjects();
+                               waitingProcess = false;
+                           });
+
+                       while (waitingProcess)
+                       {
+                           Thread.Sleep(1);
+                           Debug.Log("Waiting hide objects");
+                       }
+
+                       args.Progress = 30;
+                       args.State = ReadState.Working;
+                       args.Key = key;
+                       Loom.QueueOnMainThread(() => { completedCallback(args); });
+
+                       GameObject cameraObject = null;
+                       Camera camera = null;
+                       GameObject previewObject = null;
+                       waitingProcess = true;
+                       Loom.QueueOnMainThread(() =>
+                       {
+                           Debug.Log("object setup");
+                           previewObject = this.DoSetupObjects(key, content, out cameraObject, out camera);
+                           waitingProcess = false;
+                       });
+
+                       while (waitingProcess)
+                       {
+                           Thread.Sleep(1);
+                           Debug.Log("Waiting obj setup");
+                       }
+
+                       // TODO: Hide mesh renderes before rendering to prevent any other scene data from being rendered along with preview
+
+                       args.Progress = 60;
+                       args.State = ReadState.Working;
+                       args.Key = key;
+                       Loom.QueueOnMainThread(() =>
+                       {
+                           Debug.Log("rendering and capturing pixels");
+
+                           // we need to manually render one frame with the camera here
+                           camera.Render();
+
+                           // generate a preview texture
+                           texture = new Texture2D(key.Width, key.Height, TextureFormat.ARGB32, true);
+                           texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
+                           texture.Apply();
+
+                           completedCallback(args);
+                           waitingProcess = false;
+                       },
+                       Loom.QueueType.PostRender);
+
+                       while (waitingProcess)
+                       {
+                           Thread.Sleep(1);
+                           Debug.Log("Waiting post render");
+                       }
+
+                       Loom.QueueOnMainThread(() =>
+                       {  // destroy preview objects
+                           Debug.Log("destroying");
+
+                           Object.DestroyImmediate(previewObject);
+                           Object.DestroyImmediate(cameraObject);
+                       });
+
+                       Debug.Log("restoring scene");
+                       this.DoRestoreScene(roots);
+
+                       args.Progress = 90;
+                       args.State = ReadState.Working;
+                       args.Key = key;
+                       Loom.QueueOnMainThread(() => { completedCallback(args); });
+
+                       Debug.Log("saving cache");
+                       this.DoSaveToCache(key, texture);
+                   }
+
+                   args.Progress = 100;
+                   args.State = ReadState.Completed;
+                   args.Key = key;
+                   args.Result = texture;
+
+                   Loom.QueueOnMainThread(() => { completedCallback(args); });
+               });
+                   */
             var scheduler = CoroutineManager.Instance;
             scheduler.StartCoroutine(this.GetData(key, completedCallback, content));
+
+        }
+
+        private void CreateGameObject()
+        {
+            if (this.asyncObject != null)
+            {
+                return;
+            }
+
+            var obj = new GameObject("ObjMeshPreviewTextureStringReader_Async");
+            // obj.hideFlags = HideFlags.HideAndDontSave;
+            this.camera = obj.AddComponent<Camera>();
+            this.asyncObject = obj.AddComponent<AsyncBehavior>();
         }
 
         /// <summary>
@@ -325,15 +518,16 @@ namespace Codefarts.ContentManager.Scripts
 #endif
 
             Texture2D texture = null;
-            var meshPreviewTexture = this.DoLoadCache(key);
+            var meshPreviewTexture = this.DoLoadCache(key, true);
             if (meshPreviewTexture != null)
             {
-                args.Progress = 100;
-                args.State = ReadState.Completed;
-                args.Key = key;
-                args.Result = meshPreviewTexture;
-                completedCallback(args);
-                yield return null;
+                texture = meshPreviewTexture.Texture;
+                //args.Progress = 100;
+                //args.State = ReadState.Completed;
+                //args.Key = key;
+                //args.Result = meshPreviewTexture;
+                //completedCallback(args);
+                //yield return null;
             }
             else
             {
@@ -346,23 +540,39 @@ namespace Codefarts.ContentManager.Scripts
                 completedCallback(args);
                 yield return new WaitForEndOfFrame();
 
-                GameObject cameraObject;
-                Camera camera;
-                var previewObject = this.DoSetupObjects(key, content, out cameraObject, out camera);
+                // GameObject cameraObject;
+                Debug.Log("do setup");
+                var previewObject = this.DoSetupObjects(key, content);
+                Debug.Log("done setup");
 
                 // TODO: Hide mesh renderes before rendering to prevent any other scene data from being rendered along with preview
-
-                // we need to manually render one frame with the camera here
-                camera.Render();
-
-                // generate a preview texture
+                //  var waitingForPostRender = true;
                 texture = new Texture2D(key.Width, key.Height, TextureFormat.ARGB32, true);
-                texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
-                texture.Apply();
+                this.asyncObject.AddPostRenderCallback(
+                      () =>
+                      {
+                          // generate a preview texture
+                          Debug.Log("2");
+                          texture.ReadPixels(new Rect(0, 0, key.Width, key.Height), 0, 0);
+                          texture.Apply();
+                          //   waitingForPostRender = false;
+                      });
 
+                Debug.Log("1");
+                // we need to manually render one frame with the camera here
+                this.camera.Render();
+
+                //// wait for postback
+                //while (waitingForPostRender)
+                //{
+                //    yield return new WaitForEndOfFrame();
+                //}
+
+                Debug.Log("3");
+                
                 // destroy preview objects
                 Object.DestroyImmediate(previewObject);
-                Object.DestroyImmediate(cameraObject);
+                //  Object.DestroyImmediate(cameraObject);
 
                 args.Progress = 60;
                 args.State = ReadState.Working;

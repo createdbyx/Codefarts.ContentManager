@@ -61,6 +61,10 @@
       <Project>{3C076449-AFB7-34A8-65BF-89D84496CC0D}</Project>
       <Name>UnityVS.ContentManager for Unity.CSharp</Name>
     </ProjectReference>
+    <ProjectReference Include="UnityVS.ContentManager for Unity.CSharp.Plugins.csproj">
+      <Project>{843F97DF-2485-4CA3-C21D-FE0E8FB07215}</Project>
+      <Name>UnityVS.ContentManager for Unity.CSharp.Plugins</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\CoreGlobalConstants.cs" />
@@ -75,8 +79,11 @@
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\SimpleJSON.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\SubmitFeedbackWindow.cs" />
     <Compile Include="Assets\Codefarts Game\CoreProjectCode\Editor\UnityPreferencesManager.cs" />
+    <Compile Include="Assets\iTweenEditor\Editor\iTweenEventDataEditor.cs" />
+    <Compile Include="Assets\iTweenEditor\Editor\iTweenPathEditor.cs" />
     <None Include="Assets\Codefarts Game\ContentManager\Resources\Codefarts.Unity\Localization\en-us.txt" />
     <None Include="Assets\Codefarts Game\CoreProjectCode\Editor\Resources\Codefarts.Unity\Localization\en-us.txt" />
+    <None Include="Assets\iTweenEditor\README.txt" />
     <None Include="Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Bridge.dll" />
     <None Include="Assets\UnityVS\Editor\SyntaxTree.VisualStudio.Unity.Messaging.dll" />
     <None Include="Assets\UnityVS\Editor\UnityVS.VersionSpecific.dll" />

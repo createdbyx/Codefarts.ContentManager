@@ -19,11 +19,11 @@ namespace Codefarts.ContentManager.Scripts
 
         private Texture2D screenshotTexture;
 
-        private bool isCapturingScreenShot;
+        //   private bool isCapturingScreenShot;
 
         private string modelPath = @"C:\Users\Dean\Downloads\toruspro.obj";
 
-        private bool isCapturingScreenShotAsync;
+        //   private bool isCapturingScreenShotAsync;
 
         private float percentage;
 
@@ -33,46 +33,34 @@ namespace Codefarts.ContentManager.Scripts
 
         private bool isLoadingAsync;
 
-        public void OnPostRender()
-        {
-            if (this.isCapturingScreenShot)
-            {
-                this.isCapturingScreenShot = false;
-                var args = new MeshPreviewTextureArgs()
-                               {
-                                   Key = this.modelPath,
-                                   Width = 256,
-                                   Height = 256,
-                                   CacheFolder = Application.temporaryCachePath,
-                                   SaveToCache = false,
-                                   LoadFromCache = false,
-                                   BackgroundColor = Color.clear,
-                                   Material = this.previewMaterial
-                               };
+        private MeshPreviewTextureArgs args;
 
-                if (this.isCapturingScreenShotAsync)
-                {
-                    ContentManager<MeshPreviewTextureArgs>.Instance.Load<MeshPreviewTexture>(args, this.ScreenShotProgress);
-                }
-                else
-                {
-                    var mesh = ContentManager<MeshPreviewTextureArgs>.Instance.Load<MeshPreviewTexture>(args);
-                    this.screenshotTexture = mesh.Texture;
-                    this.isCapturingScreenShot = false;
-                }
-            }
-        }
+
+        //public void OnPostRender()
+        //{
+        //    if (this.isCapturingScreenShot)
+        //    {
+        //        this.isCapturingScreenShot = false;
+
+        //        args.Material = this.previewMaterial;
+        //        var mesh = ContentManager<MeshPreviewTextureArgs>.Instance.Load<MeshPreviewTexture>(args);
+        //        this.screenshotTexture = mesh.Texture;
+        //        this.isCapturingScreenShot = false;
+        //    }
+        //}
 
         private void ScreenShotProgress(ReadAsyncArgs<MeshPreviewTextureArgs, MeshPreviewTexture> args)
         {
             if (args.State == ReadState.Completed)
             {
                 this.screenshotTexture = args.Result.Texture;
-                this.isCapturingScreenShot = false;
+                //  this.isCapturingScreenShot = false;
+                Debug.Log("completed: " + this.percentage);
                 return;
             }
 
             this.percentage = args.Progress;
+            Debug.Log("progress: " + this.percentage);
         }
 
         /// <summary>
@@ -84,29 +72,37 @@ namespace Codefarts.ContentManager.Scripts
 
             if (GUI.Button(new Rect(10, 40, 128, 20), "Take Screen Shot"))
             {
-                this.isCapturingScreenShot = true;
-                this.isCapturingScreenShotAsync = false;
+                args.Material = this.previewMaterial;
+                var screenShotData = ContentManager<MeshPreviewTextureArgs>.Instance.Load<MeshPreviewTexture>(args, false);
+                this.screenshotTexture = screenShotData.Texture;
+                //  this.isCapturingScreenShot = true;
+                //this.isCapturingScreenShotAsync = false;
             }
 
             if (GUI.Button(new Rect(140, 40, 200, 20), "Take Screen Shot Async"))
             {
-                this.isCapturingScreenShot = true;
-                this.isCapturingScreenShotAsync = true;
+                args.Material = this.previewMaterial;
+                ContentManager<MeshPreviewTextureArgs>.Instance.Load<MeshPreviewTexture>(args, this.ScreenShotProgress, false);
+                //this.isCapturingScreenShot = true;
+                //this.isCapturingScreenShotAsync = true;
             }
 
             if (GUI.Button(new Rect(10, 70, 128, 20), "Load"))
             {
                 var filter = this.meshObject.GetComponent<MeshFilter>();
-                filter.sharedMesh = ContentManager<string>.Instance.Load<Mesh>(this.modelPath);
+                args.Material = this.material;
+                filter.sharedMesh = ContentManager<string>.Instance.Load<Mesh>(this.modelPath, false);
             }
 
             if (GUI.Button(new Rect(140, 70, 128, 20), "Load Async"))
             {
                 this.isLoadingAsync = true;
+                args.Material = this.material;
                 ContentManager<string>.Instance.Load<Mesh>(this.modelPath, this.LoadCallback, false);
             }
 
-            if (this.isCapturingScreenShot || this.isLoadingAsync)
+            //  if (this.isCapturingScreenShot || this.isLoadingAsync)
+            if (this.isLoadingAsync)
             {
                 GUI.Label(new Rect(275, 70, 256, 30), string.Format("Loading: {0}%", this.percentage));
             }
@@ -135,6 +131,18 @@ namespace Codefarts.ContentManager.Scripts
         /// </summary>
         public void Start()
         {
+            this.args = new MeshPreviewTextureArgs()
+            {
+                Key = this.modelPath,
+                Width = 256,
+                Height = 256,
+                CacheFolder = Application.temporaryCachePath,
+                SaveToCache = false,
+                LoadFromCache = false,
+                BackgroundColor = Color.clear,
+                Material = this.previewMaterial
+            };
+
             // register readers
             ContentManager<MeshPreviewTextureArgs>.Instance.Register(new ObjMeshPreviewTextureStringReader());
             ContentManager<string>.Instance.Register(new ObjMeshStringReader());
