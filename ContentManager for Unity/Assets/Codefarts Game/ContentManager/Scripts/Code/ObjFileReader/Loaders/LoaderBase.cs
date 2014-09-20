@@ -20,7 +20,7 @@ namespace ObjLoader.Loader.Loaders
             }
         }
 
-        protected void StartLoadAsync(Stream lineStream, Action<float, bool> progress)
+        protected void StartLoadAsync(Stream lineStream, Action<float, bool,Exception> progress)
         {
             if (progress == null)
             {
@@ -39,13 +39,14 @@ namespace ObjLoader.Loader.Loaders
                             while (!reader.EndOfStream)
                             {
                                 dataLength += ParseLine(reader);
-                                progress((((float)dataLength / lineStream.Length) * 100), false);
+                                progress((((float)dataLength / lineStream.Length) * 100), false,null);
                             }
 
-                            progress(99, true);
+                            progress(99, true,null);
                         }
-                        catch
+                        catch(Exception ex)
                         {
+                            progress(99, true, ex);
                         }
                     }
                 }, lineStream);

@@ -56,6 +56,21 @@ namespace Codefarts.ContentManager
         /// </summary>
         private Exception error;
 
+        private bool isCanceled;
+
+        public bool IsCanceled
+        {
+            get
+            {
+                return this.isCanceled;
+            }
+        }
+
+        public void Cancel()
+        {
+            this.isCanceled = true;
+        }
+
         /// <summary>
         /// Gets or sets the error.
         /// </summary>     

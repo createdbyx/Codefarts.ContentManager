@@ -8,6 +8,6 @@ namespace ObjLoader.Loader.Loaders
     public interface IObjLoader
     {
         LoadResult Load(Stream lineStream);
-        void LoadAsync(Stream lineStream, Action<float, LoadResult> progress);
+        void LoadAsync(Stream lineStream, Action<float, Exception, LoadResult> progress);
     }
 }

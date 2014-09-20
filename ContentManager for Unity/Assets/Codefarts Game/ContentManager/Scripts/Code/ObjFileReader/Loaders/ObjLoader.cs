@@ -65,7 +65,7 @@ namespace ObjLoader.Loader.Loaders
             return CreateResult();
         }
 
-        public void LoadAsync(Stream lineStream, Action<float, LoadResult> progress)
+        public void LoadAsync(Stream lineStream, Action<float, Exception, LoadResult> progress)
         {
             if (progress == null)
             {
@@ -73,9 +73,9 @@ namespace ObjLoader.Loader.Loaders
             }
 
             this.StartLoadAsync(lineStream,
-              (p, completed) =>
+              (p, completed, ex) =>
               {
-                  progress(p, completed ? CreateResult() : null);
+                  progress(p, ex, completed ? CreateResult() : null);
               });
         }
 

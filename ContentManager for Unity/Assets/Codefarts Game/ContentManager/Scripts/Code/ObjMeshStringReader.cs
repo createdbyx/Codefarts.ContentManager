@@ -10,6 +10,9 @@ namespace Codefarts.ContentManager.Scripts
     using System;
     using System.Collections;
     using System.IO;
+    using System.Threading;
+
+    using Codefarts.UnityThreading;
 
     using ObjLoader.Loader.Loaders;
 
@@ -264,6 +267,106 @@ namespace Codefarts.ContentManager.Scripts
 
             var isLoading = true;
             var progress = 0f;
+            Vector3[] vertexes = null;
+            Vector3[] normals = null;
+            Vector2[] uvs = null;
+            FaceGroup[] faces = null;
+#if USEOBJECTPOOLING
+            var args = ObjectPoolManager<ReadAsyncArgs<string, object>>.Instance.Pop();
+#else
+            var args = new ReadAsyncArgs<string, object>();
+#endif
+
+            // create a main task to execute on a background thread
+            var task = new Task() { Type = QueueType.BackgroundThread };
+
+            task.action =
+                t =>
+                {
+                    var objLoaderFactory = new ObjLoaderFactory();
+                    var objLoader = objLoaderFactory.Create(new MaterialNullStreamProvider());
+
+                    var path = Path.IsPathRooted(key) ? key : Path.Combine(content.RootDirectory, key);
+                    LoadResult result = null;
+                    var fileStream = new FileStream(path, FileMode.Open);
+
+                    Exception error = null;
+                    var callback = new Action<float, Exception, LoadResult>(
+                        (p, ex, value) =>
+                        {
+                            result = value;
+                            progress = p * 0.66f;
+                            error = ex;
+                            isLoading = value == null && error == null;
+                        });
+
+                    objLoader.LoadAsync(fileStream, callback);
+
+                    args.State = ReadState.Working;
+                    args.Key = key;
+                    while (isLoading)
+                    {
+                        args.Progress = progress;
+                        args.Error = error;
+                        if (error != null)
+                        {
+                            throw error;
+                        }
+
+                        // queue a task on the main thread (update method)
+                        Threading.QueueTask(
+                            tx =>
+                            {
+                                completedCallback(args);
+                            });
+
+                        Thread.Sleep(1);                                                              
+                    }
+
+                    // check if error occurred
+                    this.BuildMesh(result, out vertexes, out normals, out uvs, out faces, args,
+                      e =>
+                      {
+                          // queue a task on the main thread (update method)
+                          Threading.QueueTask(
+                              tx =>
+                              {
+                                  completedCallback(args);        
+                              });
+                      });
+                };
+
+            var buildMeshTask = new Task() { Type = QueueType.Update };
+            buildMeshTask.action =
+                t =>
+                {
+                    var mesh = new Mesh();
+                    mesh.vertices = vertexes;
+                    mesh.uv = uvs;
+                    mesh.normals = normals;
+
+                    for (var i = 0; i < faces.Length; i++)
+                    {
+                        mesh.SetTriangles(faces[0].indexes, i);
+                    }
+
+                    mesh.Optimize();
+                    mesh.RecalculateBounds();
+
+                    args.Progress = 100;
+                    args.State = ReadState.Completed;
+                    args.Result = mesh;
+
+                    completedCallback(args);
+                };
+
+            // set the continuation task and execute the task
+            task.continueWith = buildMeshTask;
+            Threading.QueueTask(task);
+
+            /*
+            var isLoading = true;
+            var progress = 0f;
             Loom.RunAsync(
                 () =>
                 {
@@ -339,7 +442,7 @@ namespace Codefarts.ContentManager.Scripts
                             completedCallback(args);
                         });
                 });
-
+                     */
 
 
             //var scheduler = CoroutineManager.Instance;

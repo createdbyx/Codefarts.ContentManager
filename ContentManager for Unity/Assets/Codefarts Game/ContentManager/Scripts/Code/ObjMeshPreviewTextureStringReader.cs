@@ -17,6 +17,7 @@ namespace Codefarts.ContentManager.Scripts
     using System.Threading;
 
     using Codefarts.ContentManager.Scripts.Code;
+    using Codefarts.UnityThreading;
 
     using ObjLoader.Loader.Loaders;
 
@@ -100,7 +101,7 @@ namespace Codefarts.ContentManager.Scripts
             }
 
             // hide and disable all top level objects
-            var roots = this.HideTopLevelObjects();
+            //   var roots = this.HideTopLevelObjects();
 
             var previewObject = this.DoSetupObjects(key, content);
 
@@ -125,7 +126,7 @@ namespace Codefarts.ContentManager.Scripts
             // destroy preview objects
             Object.DestroyImmediate(previewObject);
 
-            this.DoRestoreScene(roots);
+            //  this.DoRestoreScene(roots);
 
             this.DoSaveToCache(key, texture);
 
@@ -160,8 +161,8 @@ namespace Codefarts.ContentManager.Scripts
             Texture2D texture = null;
             if (async)
             {
-                Loom.QueueOnMainThread(
-                    () =>
+                Threading.QueueTask(
+                    t =>
                     {
                         texture = new Texture2D(4, 4, TextureFormat.ARGB32, true);
                     });
@@ -196,7 +197,7 @@ namespace Codefarts.ContentManager.Scripts
             this.LoadPreviewGameObjects(key.Key, content, previewObject);
 
             previewObject.AddComponent<MeshRenderer>();
-            previewObject.transform.position = Vector3.zero;
+            previewObject.transform.position = key.Location;
             previewObject.renderer.material = key.Material == null ? new Material(Shader.Find("Diffuse")) : key.Material;
 
             // setup preview camera
@@ -214,8 +215,10 @@ namespace Codefarts.ContentManager.Scripts
             radius = radius > halfSize.z ? radius : halfSize.z;
 
             // calculate how far to position the camera away from the object
-            var dist = radius / (float)Math.Sin(camera.fieldOfView * (Math.PI / 180) / 2);
-            camera.transform.position = new Vector3(dist, dist, 0);
+           // var halfFieldOfViewInRadians = (camera.fieldOfView * (Math.PI / 180)) / 2;
+            var dist = radius * 2;//* (float)Math.Sin(halfFieldOfViewInRadians)*2;
+            Debug.Log("dist: " + dist);
+            camera.transform.position = key.Location + new Vector3(dist, dist, 0);
             camera.transform.LookAt(previewObject.transform.position);
             return previewObject;
         }
@@ -361,15 +364,14 @@ namespace Codefarts.ContentManager.Scripts
 
             this.CreateGameObject();
 
-            /*
-             Loom.RunAsync(
-               () =>
+            Threading.QueueTask(
+               task =>
                {
- #if USEOBJECTPOOLING
+#if USEOBJECTPOOLING
                    var args = ObjectPoolManager<ReadAsyncArgs<MeshPreviewTextureArgs, object>>.Instance.Pop();
- #else
+#else
                    var args = new ReadAsyncArgs<MeshPreviewTextureArgs, object>();
- #endif
+#endif
 
                    Texture2D texture = null;
                    Debug.Log("loading cache");
@@ -390,49 +392,37 @@ namespace Codefarts.ContentManager.Scripts
                        Debug.Log("hiding existing scene");
 
                        // hide and disable all top level objects
-                       List<RootObject> roots = null;
-                       var waitingProcess = true;
-                       Loom.QueueOnMainThread(
-                           () =>
-                           {
-                               roots = this.HideTopLevelObjects();
-                               waitingProcess = false;
-                           });
-
-                       while (waitingProcess)
-                       {
-                           Thread.Sleep(1);
-                           Debug.Log("Waiting hide objects");
-                       }
+                       //  List<RootObject> roots = null;
+                       // var hideTask = Threading.QueueTask(t => { roots = this.HideTopLevelObjects(); });
+                       //  hideTask.Wait();    
 
                        args.Progress = 30;
                        args.State = ReadState.Working;
                        args.Key = key;
-                       Loom.QueueOnMainThread(() => { completedCallback(args); });
+                       Threading.QueueTask(t => { completedCallback(args); }).Wait();
 
                        GameObject cameraObject = null;
                        Camera camera = null;
                        GameObject previewObject = null;
-                       waitingProcess = true;
-                       Loom.QueueOnMainThread(() =>
+                       var setupTask = Threading.QueueTask(t =>
                        {
                            Debug.Log("object setup");
-                           previewObject = this.DoSetupObjects(key, content, out cameraObject, out camera);
-                           waitingProcess = false;
+                           previewObject = this.DoSetupObjects(key, content);
                        });
+                       setupTask.Wait();
 
-                       while (waitingProcess)
-                       {
-                           Thread.Sleep(1);
-                           Debug.Log("Waiting obj setup");
-                       }
+                       //while (waitingProcess)
+                       //{
+                       //    Thread.Sleep(1);
+                       //    Debug.Log("Waiting obj setup");
+                       //}
 
                        // TODO: Hide mesh renderes before rendering to prevent any other scene data from being rendered along with preview
 
                        args.Progress = 60;
                        args.State = ReadState.Working;
                        args.Key = key;
-                       Loom.QueueOnMainThread(() =>
+                       var renderTask = Threading.QueueTask(t =>
                        {
                            Debug.Log("rendering and capturing pixels");
 
@@ -445,34 +435,50 @@ namespace Codefarts.ContentManager.Scripts
                            texture.Apply();
 
                            completedCallback(args);
-                           waitingProcess = false;
-                       },
-                       Loom.QueueType.PostRender);
 
-                       while (waitingProcess)
-                       {
-                           Thread.Sleep(1);
-                           Debug.Log("Waiting post render");
-                       }
-
-                       Loom.QueueOnMainThread(() =>
-                       {  // destroy preview objects
                            Debug.Log("destroying");
 
                            Object.DestroyImmediate(previewObject);
                            Object.DestroyImmediate(cameraObject);
-                       });
+                       },
+                       QueueType.OnPostRender);
+                       renderTask.Wait();
 
-                       Debug.Log("restoring scene");
-                       this.DoRestoreScene(roots);
+                       //while (waitingProcess)
+                       //{
+                       //    Thread.Sleep(1);
+                       //    Debug.Log("Waiting post render");
+                       //}
 
-                       args.Progress = 90;
-                       args.State = ReadState.Working;
-                       args.Key = key;
-                       Loom.QueueOnMainThread(() => { completedCallback(args); });
+                       //var destroyTask = Threading.QueueTask(t =>
+                       //{  // destroy preview objects
+                       //    Debug.Log("destroying");
 
-                       Debug.Log("saving cache");
-                       this.DoSaveToCache(key, texture);
+                       //    Object.DestroyImmediate(previewObject);
+                       //    Object.DestroyImmediate(cameraObject);
+                       //});
+                       //destroyTask.Wait();
+
+                       //var restoreTask = Threading.QueueTask(t =>
+                       //{
+                       //    Debug.Log("restoring scene");
+                       //    this.DoRestoreScene(roots);
+
+                       //    args.Progress = 90;
+                       //    args.State = ReadState.Working;
+                       //    args.Key = key;
+                       //    completedCallback(args);
+                       //});
+                       //restoreTask.Wait();
+
+                       // Threading.QueueTask(t => { completedCallback(args); }).Wait();
+
+                       Threading.QueueTask(
+                           t =>
+                           {
+                               Debug.Log("saving cache");
+                               this.DoSaveToCache(key, texture);
+                           }).Wait();
                    }
 
                    args.Progress = 100;
@@ -480,12 +486,14 @@ namespace Codefarts.ContentManager.Scripts
                    args.Key = key;
                    args.Result = texture;
 
-                   Loom.QueueOnMainThread(() => { completedCallback(args); });
-               });
-                   */
-            var scheduler = CoroutineManager.Instance;
-            scheduler.StartCoroutine(this.GetData(key, completedCallback, content));
+                   Threading.QueueTask(t => { completedCallback(args); });
+               },
+               QueueType.BackgroundThread);
 
+            /*
+             * var scheduler = CoroutineManager.Instance;
+             scheduler.StartCoroutine(this.GetData(key, completedCallback, content));
+              */
         }
 
         private void CreateGameObject()
@@ -501,6 +509,7 @@ namespace Codefarts.ContentManager.Scripts
             this.asyncObject = obj.AddComponent<AsyncBehavior>();
         }
 
+        /*
         /// <summary>
         /// Gets the data from the 
         /// </summary>
@@ -569,7 +578,7 @@ namespace Codefarts.ContentManager.Scripts
                 //}
 
                 Debug.Log("3");
-                
+
                 // destroy preview objects
                 Object.DestroyImmediate(previewObject);
                 //  Object.DestroyImmediate(cameraObject);
@@ -596,6 +605,6 @@ namespace Codefarts.ContentManager.Scripts
             args.Key = key;
             args.Result = texture;
             completedCallback(args);
-        }
+        }      */
     }
 }

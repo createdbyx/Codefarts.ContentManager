@@ -30,7 +30,7 @@ namespace Codefarts.ContentManager.Scripts
                 // if instance is null create the singleton
                 if (instance == null)
                 {
-                    var obj = new GameObject("CoroutineManager");
+                    var obj = new GameObject("CoroutineManager_ContentManager");
                     instance = obj.AddComponent<CoroutineManager>();
                 }
 

@@ -15,8 +15,6 @@ namespace Codefarts.ContentManager.Scripts
 
     using Codefarts.ContentManager;
 
-    using UnityEditor;
-
     using UnityEngine;
 #if USEOBJECTPOOLING
     using Codefarts.ObjectPooling;

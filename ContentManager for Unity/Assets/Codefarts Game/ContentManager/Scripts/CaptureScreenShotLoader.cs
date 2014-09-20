@@ -140,7 +140,8 @@ namespace Codefarts.ContentManager.Scripts
                 SaveToCache = false,
                 LoadFromCache = false,
                 BackgroundColor = Color.clear,
-                Material = this.previewMaterial
+                Material = this.previewMaterial,
+                Location = Vector3.one * (float.MaxValue * 0.75f)
             };
 
             // register readers

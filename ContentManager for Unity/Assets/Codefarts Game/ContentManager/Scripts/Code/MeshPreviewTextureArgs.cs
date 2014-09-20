@@ -26,6 +26,8 @@ namespace Codefarts.ContentManager.Scripts
 
         public Color BackgroundColor { get; set; }
 
+        public Vector3 Location { get; set; }
+
         public MeshPreviewTextureArgs()
         {
             this.LoadFromCache = true;
