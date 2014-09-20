@@ -1,0 +1,6 @@
+[submodule "Assets/Codefarts Game/ContentManager/Code"]
+	path = Assets/Codefarts Game/ContentManager/Code
+	url = C:\\Users\\Dean\\Documents\\AeroFS\\Code Projects\\Codefarts.ContentManager\\ContentManager\\Code
+[submodule "Assets/Codefarts Game/UnityThreading/Code"]
+	path = Assets/Codefarts Game/UnityThreading/Code
+	url = C:\\Users\\Dean\\Documents\\AeroFS\\Unity\\Codefarts.UnityThreading\\Assets\\Codefarts Game\\UnityThreading\\Code
