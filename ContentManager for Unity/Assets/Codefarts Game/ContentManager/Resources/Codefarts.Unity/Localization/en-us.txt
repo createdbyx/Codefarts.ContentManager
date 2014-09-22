@@ -1,2 +1,0 @@
-﻿ContentManager_ERR_ReaderAlreadyAdded A reader that reads the '{0}' type has already been added!
-ContentManager_ERR_NoReaderIsAvailable No reader is available for the specified type.
