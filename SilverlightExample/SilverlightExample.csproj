@@ -82,7 +82,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="HtmlReader.cs" />
-    <Compile Include="WritableBitmapReader.cs" />
+    <Compile Include="Silverlight\WritableBitmapReader.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>

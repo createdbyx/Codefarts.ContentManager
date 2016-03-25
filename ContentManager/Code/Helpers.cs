@@ -2,6 +2,8 @@
 {
 #if UNITY_5
     using Codefarts.Localization;
+#else
+    using Codefarts.ContentManager.Properties;
 #endif
 
     internal class Helpers
