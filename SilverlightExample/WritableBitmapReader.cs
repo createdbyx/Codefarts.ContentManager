@@ -44,15 +44,15 @@
             Uri url;
             return Uri.TryCreate(key, UriKind.RelativeOrAbsolute, out url);
         }
-
+           
         /// <summary>
         /// Reads a file asynchronously and returns a type representing the data.
         /// </summary>
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        public void ReadAsync(string key, ContentManager<string> content, Action<object> completedCallback)
-        {
+         public void ReadAsync(string key, ContentManager<string> content, Action<ReadAsyncArgs<string, object>> completedCallback)
+          {
             var client = new WebClient();
             client.OpenReadCompleted += (s, e) =>
                 {
@@ -61,7 +61,7 @@
                         var bmp = new BitmapImage();
                         bmp.SetSource(e.Result);
                         var bitmap = new WriteableBitmap(bmp);
-                        completedCallback(bitmap);
+                        completedCallback(new ReadAsyncArgs<string, object>() { Progress = 100, Key = key, Result = bitmap, State = ReadState.Completed });
                     }
                 };
 
