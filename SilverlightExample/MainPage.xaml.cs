@@ -17,7 +17,7 @@
         {
             // get the content manager singleton and load the google home page. 
             var manager = ContentManager<string>.Instance;
-            manager.Load<string>("http://www.google.com/", data => { this.txtHtml.Text = data; });
+            manager.Load<string>("http://www.google.com/", data => { this.txtHtml.Text = data.Result; });
         }
 
         private void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -32,7 +32,7 @@
         {
             // get the content manager singleton and load the google logo image. 
             var manager = ContentManager<string>.Instance;
-            manager.Load<WriteableBitmap>("http://www.google.ca/images/srpr/logo4w.png", data => { this.imgPreview.Source = data; });
+            manager.Load<WriteableBitmap>("http://www.google.ca/images/srpr/logo4w.png", data => { this.imgPreview.Source = data.Result; });
         }
     }
 }

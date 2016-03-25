@@ -50,14 +50,14 @@
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        public void ReadAsync(string key, ContentManager<string> content, Action<object> completedCallback)
+        public void ReadAsync(string key, ContentManager<string> content, Action<ReadAsyncArgs<string, object>> completedCallback)
         {
             var client = new WebClient();
             client.DownloadStringCompleted += (s, e) =>
                 {
                     if (completedCallback != null)
                     {
-                        completedCallback(e.Result);
+                        completedCallback(new ReadAsyncArgs<string, object>() { Progress = 100, Key = key, Result = e.Result, State = ReadState.Completed });
                     }
                 };
 
