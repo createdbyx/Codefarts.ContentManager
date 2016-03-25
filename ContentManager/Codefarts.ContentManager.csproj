@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Code\ContentManager.cs" />
     <Compile Include="Code\ExtensionMethods.cs" />
+    <Compile Include="Code\Helpers.cs" />
     <Compile Include="Code\IReader.cs" />
     <Compile Include="Code\IWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

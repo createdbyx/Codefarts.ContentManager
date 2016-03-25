@@ -10,13 +10,7 @@ namespace Codefarts.ContentManager
 {
     using System;
     using System.Collections.Generic;
-
-#if !UNITY3D
-    using Codefarts.ContentManager.Properties;
-#else
-    using Codefarts.Localization;
-#endif
-
+             
     /// <summary>
     /// Provides a content manager for loading and caching assets.
     /// </summary>
@@ -259,12 +253,8 @@ namespace Codefarts.ContentManager
             // try to find a matching reader that return the same type specified with "K"
             var type = typeof(List<TReturnValue>).GetGenericArguments()[0];
             if (!this.Readers.ContainsKey(type))
-            {
-#if UNITY3D
-                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
-#else
-                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
-#endif
+            {               
+                throw new ArgumentException(Helpers.GetResourceString("ContentManager_ERR_NoReaderIsAvailable"));  
             }
 
             // try to find a reader that can read the asset
@@ -281,12 +271,8 @@ namespace Codefarts.ContentManager
 
             // if reader is not assigned throw exception
             if (reader == null)
-            {
-#if UNITY3D
-                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
-#else
-                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
-#endif
+            {                    
+                throw new NotSupportedException(Helpers.GetResourceString("ContentManager_ERR_NoReaderIsAvailable"));   
             }
 
             // attempt to read the asset
@@ -361,20 +347,14 @@ namespace Codefarts.ContentManager
 
                 // if a callback was specified call it now and pass in the reference to the loaded asset
                 completedCallback(args);
-
-
                 return;
             }
 
             // try to find a matching reader that return the same type specified with "TReturnValue"
             var type = typeof(List<TReturnValue>).GetGenericArguments()[0];
             if (!this.Readers.ContainsKey(type))
-            {
-#if UNITY3D
-                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
-#else
-                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
-#endif
+            {                           
+                throw new ArgumentException(Helpers.GetResourceString("ContentManager_ERR_NoReaderIsAvailable"));   
             }
 
             // try to find a reader that can read the asset
@@ -391,12 +371,8 @@ namespace Codefarts.ContentManager
 
             // if reader is not assigned throw exception
             if (reader == null)
-            {
-#if UNITY3D
-                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoReaderIsAvailable"));
-#else
-                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoReaderIsAvailable"));
-#endif
+            {                        
+                throw new NotSupportedException(Helpers.GetResourceString("ContentManager_ERR_NoReaderIsAvailable"));   
             }
 
             // update the loading queue
@@ -431,10 +407,25 @@ namespace Codefarts.ContentManager
 #else
                 var args = new ReadAsyncArgs<TKey, TReturnValue>();
 #endif
-                args.Key = readerObject.Key;
-                args.Progress = readerObject.Progress;
-                args.State = readerObject.State;
-                args.Result = (TReturnValue)readerObject.Result;
+                try
+                {
+                    args.Key = readerObject.Key;
+                    args.Progress = readerObject.Progress;
+                    args.State = readerObject.State;
+                   // Debug.Log(readerObject.Result == null);
+                    //if (readerObject.Result != null)
+                    //{
+                    //    Debug.Log(readerObject.Result.GetType().FullName);
+                    //}
+                    args.Result = (TReturnValue)readerObject.Result;
+                }
+                catch (Exception ex)
+                {
+                    args.Key = readerObject.Key;
+                    args.State = ReadState.Completed;
+                    args.Error = ex;
+                    args.Result = default(TReturnValue);
+                }
 
                 // if a callback was specified call it now and pass in the reference to the loaded asset
                 completedCallback(args);
@@ -474,12 +465,8 @@ namespace Codefarts.ContentManager
             // try to find a matching writer that writes the same type specified with "TData"
             var type = typeof(List<TData>).GetGenericArguments()[0];
             if (!this.Writers.ContainsKey(type))
-            {
-#if UNITY3D
-                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
-#else
-                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
-#endif
+            {   
+                throw new ArgumentException(Helpers.GetResourceString("ContentManager_ERR_NoWriterIsAvailable"));    
             }
 
             // try to find a writer that can write the data
@@ -496,12 +483,8 @@ namespace Codefarts.ContentManager
 
             // if reader is not assigned throw exception
             if (writer == null)
-            {
-#if UNITY3D
-                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
-#else
-                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
-#endif
+            {   
+                throw new NotSupportedException(Helpers.GetResourceString("ContentManager_ERR_NoWriterIsAvailable"));  
             }
 
             // attempt to write the asset
@@ -547,11 +530,7 @@ namespace Codefarts.ContentManager
             var type = typeof(List<TData>).GetGenericArguments()[0];
             if (!this.Writers.ContainsKey(type))
             {
-#if UNITY3D
-                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
-#else
-                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
-#endif
+                throw new ArgumentException(Helpers.GetResourceString("ContentManager_ERR_NoWriterIsAvailable"));
             }
 
             // try to find a writer that can save the data
@@ -568,12 +547,8 @@ namespace Codefarts.ContentManager
 
             // if writer is not assigned throw exception
             if (writer == null)
-            {
-#if UNITY3D
-                throw new NotSupportedException(LocalizationManager.Instance.Get("ContentManager_ERR_NoWriterIsAvailable"));
-#else
-                throw new NotSupportedException(Resources.ResourceManager.GetString("ContentManager_ERR_NoWriterIsAvailable"));
-#endif
+            {      
+                throw new NotSupportedException(Helpers.GetResourceString("ContentManager_ERR_NoWriterIsAvailable"));  
             }
 
             // update the saving queue
@@ -606,11 +581,7 @@ namespace Codefarts.ContentManager
             var list = this.Readers[reader.Type];
             if (list.Contains(reader))
             {
-#if UNITY3D
-                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_ReaderAlreadyAdded"));
-#else
-                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_ReaderAlreadyAdded"));
-#endif
+                 throw new ArgumentException(Helpers.GetResourceString("ContentManager_ERR_ReaderAlreadyAdded")); 
             }
 
             list.Add(reader);
@@ -638,11 +609,7 @@ namespace Codefarts.ContentManager
             var list = this.Writers[writer.Type];
             if (list.Contains(writer))
             {
-#if UNITY3D
-                throw new ArgumentException(LocalizationManager.Instance.Get("ContentManager_ERR_WriterAlreadyAdded"));
-#else
-                throw new ArgumentException(Resources.ResourceManager.GetString("ContentManager_ERR_WriterAlreadyAdded"));
-#endif
+                throw new ArgumentException(Helpers.GetResourceString("ContentManager_ERR_WriterAlreadyAdded"));
             }
 
             list.Add(writer);
