@@ -9,3 +9,7 @@ WindowsPhoneGameExample/WindowsPhoneGameExample/obj/
 WindowsPhoneGameExample/WindowsPhoneGameExampleContent/obj/
 WindowsPhoneGameExample/WindowsPhoneGameExample/WindowsPhoneGameExample.csproj.Debug.cachefile
 WindowsPhoneGameExample/WindowsPhoneGameExample/Thumbs.db
+MonoGameExample/bin/
+MonoGameExample/obj/
+MonoGameExample/Content/obj/
+MonoGameExample/Content/bin/

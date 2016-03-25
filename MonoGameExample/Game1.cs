@@ -1,25 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.GamerServices;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Input.Touch;
-using Microsoft.Xna.Framework.Media;
-
-namespace WindowsPhoneGameExample
+﻿namespace MonoGameExample
 {
     using Codefarts.ContentManager;
-
-    using SilverlightExample;
+    using Microsoft.Xna.Framework;
+    using Microsoft.Xna.Framework.Graphics;
+    using Microsoft.Xna.Framework.Input;
+    using System;
 
     /// <summary>
-    /// This is the main type for your game
+    /// This is the main type for your game.
     /// </summary>
-    public class Game1 : Microsoft.Xna.Framework.Game
+    public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -31,7 +21,7 @@ namespace WindowsPhoneGameExample
 
         /// <summary>
         /// Holds the google logo texture.
-        /// </summary>
+        /// </summary>                                                                                 
         private Texture2D googleTexture;
 
         /// <summary>
@@ -44,6 +34,7 @@ namespace WindowsPhoneGameExample
         /// </summary>
         private ContentManager<Uri> manager;
 
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Game1"/> class.
         /// </summary>
@@ -51,12 +42,6 @@ namespace WindowsPhoneGameExample
         {
             this.graphics = new GraphicsDeviceManager(this);
             this.Content.RootDirectory = "Content";
-
-            // Frame rate is 30 fps by default for Windows Phone.
-            this.TargetElapsedTime = TimeSpan.FromTicks(333333);
-
-            // Extend battery life under lock.
-            this.InactiveSleepTime = TimeSpan.FromSeconds(1);
         }
 
         /// <summary>
@@ -68,7 +53,7 @@ namespace WindowsPhoneGameExample
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
-
+         
             // get singleton instance to the codefarts content manager using a Uri as the key type
             this.manager = ContentManager<Uri>.Instance;
 
@@ -86,21 +71,21 @@ namespace WindowsPhoneGameExample
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
-            this.spriteBatch = new SpriteBatch(GraphicsDevice);
+            this.spriteBatch = new SpriteBatch(this.GraphicsDevice);
 
             // Use Xna content manager to load the sprite font
-            this.font = this.Content.Load<SpriteFont>("Segoe UI Mono");     
+            this.font = this.Content.Load<SpriteFont>("Courier New");
 
             // asynchronously load google home page html markup
-            this.manager.Load<HtmlData>(new Uri("http://www.google.com"), data => this.html = string.IsNullOrWhiteSpace(data.Markup) ? string.Empty : data.Markup.Substring(0, 50));
+            this.manager.Load<HtmlData>(new Uri("http://www.google.com"), data => this.html = string.IsNullOrWhiteSpace(data.Result.Markup) ? string.Empty : data.Result.Markup.Substring(0, 50));
 
             // asynchronously load google logo
-            this.manager.Load<Texture2D>(new Uri("http://www.google.ca/images/srpr/logo4w.png"), data => this.googleTexture = data);
+            this.manager.Load<Texture2D>(new Uri("http://www.google.ca/images/srpr/logo4w.png"), data => this.googleTexture = data.Result);
         }
 
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
+        /// game-specific content.
         /// </summary>
         protected override void UnloadContent()
         {
@@ -115,7 +100,7 @@ namespace WindowsPhoneGameExample
         protected override void Update(GameTime gameTime)
         {
             // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 this.Exit();
             }
@@ -131,7 +116,7 @@ namespace WindowsPhoneGameExample
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            this.GraphicsDevice.Clear(Color.CornflowerBlue);
 
             this.spriteBatch.Begin();
 

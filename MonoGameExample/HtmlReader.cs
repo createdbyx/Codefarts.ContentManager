@@ -1,23 +1,14 @@
-﻿namespace SilverlightExample
+﻿namespace MonoGameExample
 {
+    using Codefarts.ContentManager;
     using System;
     using System.Net;
 
-    using Codefarts.ContentManager;
-
-    using Microsoft.Xna.Framework;
-    using Microsoft.Xna.Framework.Graphics;
-
     /// <summary>
-    /// Provides a <see cref="Texture2D"/> reader.
+    /// Provides a html reader.
     /// </summary>
-    public class Texture2DReader : IReader<Uri>
+    public class HtmlReader : IReader<Uri>
     {
-        /// <summary>
-        /// Gets or sets the <see cref="Game"/> reference used to create the textures.
-        /// </summary>
-        public Game Game { get; set; }
-
         /// <summary>
         /// Gets the <see cref="IReader{T}.Type"/> that this reader implementation returns.
         /// </summary>
@@ -25,7 +16,7 @@
         {
             get
             {
-                return typeof(Texture2D);
+                return typeof(HtmlData);
             }
         }
 
@@ -37,7 +28,11 @@
         /// <returns>Returns a type representing the data.</returns>
         public object Read(Uri key, ContentManager<Uri> content)
         {
-            throw new NotImplementedException();
+            using (var client = new WebClient())
+            {
+                var result = client.DownloadString(key);
+                return new HtmlData() { Markup = result };
+            }
         }
 
         /// <summary>
@@ -57,18 +52,18 @@
         /// <param name="key">The file to be read.</param>
         /// <param name="content">A reference to the content manager that invoked the read.</param>
         /// <param name="completedCallback">Specifies a callback that will be invoked when the read is complete.</param>
-        public void ReadAsync(Uri key, ContentManager<Uri> content, Action<object> completedCallback)
+        public void ReadAsync(Uri key, ContentManager<Uri> content, Action<ReadAsyncArgs<Uri, object>> completedCallback)
         {
             var client = new WebClient();
-            client.OpenReadCompleted += (s, e) =>
+            client.DownloadStringCompleted += (s, e) =>
                 {
                     if (completedCallback != null)
                     {
-                        completedCallback(Texture2D.FromStream(this.Game.GraphicsDevice, e.Result));
+                        completedCallback(new ReadAsyncArgs<Uri, object>() { State = ReadState.Completed, Result = new HtmlData() { Markup = e.Result } });
                     }
                 };
 
-            client.OpenReadAsync(key);
+            client.DownloadStringAsync(key);
         }
     }
 }

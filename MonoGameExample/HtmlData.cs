@@ -1,4 +1,4 @@
-﻿namespace SilverlightExample
+﻿namespace MonoGameExample
 {
     /// <summary>
     /// Provides a custom html data type.
